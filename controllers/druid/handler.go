@@ -807,9 +807,9 @@ func makeCommonConfigMap(m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap
 		data["metricDimensions.json"] = m.Spec.DimensionsMapPath
 	}
 
-  if m.Spec.KafkaPropertiesPath != "" {
-    data["kafka.properties"] = m.Spec.KafkaPropertiesPath
-  }
+	if m.Spec.KafkaPropertiesPath != "" {
+		data["kafka.properties"] = m.Spec.KafkaPropertiesPath
+	}
 
 	cfg, err := makeConfigMap(
 		fmt.Sprintf("%s-druid-common-config", m.ObjectMeta.Name),
