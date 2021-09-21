@@ -1,0 +1,35 @@
+version: v1.0
+name: druid-operator
+agent:
+  machine:
+    type: e1-standard-4
+    os_image: ubuntu1804
+
+blocks:
+  - name: Build, Test
+    task:
+      prologue:
+        commands:
+          - sem-version go 1.15
+          - checkout
+      jobs:
+        - name: Build
+          env_vars:
+            - name: KUBEBUILDER_VERSION
+              value: 2.3.1
+            - name: OS_ARCH
+              value: amd64
+          commands:
+            # Install Kubebuilder
+            - curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz"
+            - tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz
+            - mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder && chmod a+x kubebuilder
+            - export PATH=$PATH:kubebuilder/bin
+            # Build
+            - go mod download
+            - go fmt ./...
+            - go vet ./...
+            - go test ./...
+            - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+#        - name: Test
+#          commands:
