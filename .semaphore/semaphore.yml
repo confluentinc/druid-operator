@@ -23,13 +23,14 @@ blocks:
             # Install Kubebuilder
             - curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz"
             - tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz
-            - mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder && chmod a+x kubebuilder
+            - mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder
             - export PATH=$PATH:kubebuilder/bin
-            # Build
+            # Build and Test
             - go mod download
-            - go fmt ./...
-            - go vet ./...
-            - go test ./...
-            - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
-#        - name: Test
-#          commands:
+            - make generate
+            - make fmt
+            - make vet
+            - make manifests
+            - make test
+            - make manager
+\
