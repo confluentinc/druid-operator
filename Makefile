@@ -80,3 +80,10 @@ CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+init-ci:
+	# Install Kubebuilder
+	curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz"
+	tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz
+	mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder
+	export PATH=$PATH:kubebuilder/bin

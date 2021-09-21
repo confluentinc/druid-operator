@@ -20,16 +20,8 @@ blocks:
             - name: OS_ARCH
               value: amd64
           commands:
-            # Install Kubebuilder
-            - curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz"
-            - tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz
-            - mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder
-            - export PATH=$PATH:kubebuilder/bin
+            - make init-ci
             # Build and Test
             - go mod download
-            - make generate
-            - make fmt
-            - make vet
-            - make manifests
-            - make test
             - make manager
+            - make test
