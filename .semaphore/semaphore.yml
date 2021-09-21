@@ -33,4 +33,3 @@ blocks:
             - make manifests
             - make test
             - make manager
-\
