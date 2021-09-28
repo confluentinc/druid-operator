@@ -12,8 +12,6 @@ blocks:
         commands:
           - sem-version go 1.15
           - checkout
-          - export CI_BIN=/home/semaphore/bin
-          - mkdir -p ${CI_BIN} && export PATH=${CI_BIN}:${PATH}
       jobs:
         - name: Build
           env_vars:
