@@ -82,7 +82,7 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 init-ci:
-	# Install Kubebuilder
+	# Install kubebuilder
 	curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz"
 	sudo mkdir -p /usr/local/kubebuilder && \
 		sudo tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz --strip-components=1 -C /usr/local/kubebuilder/
