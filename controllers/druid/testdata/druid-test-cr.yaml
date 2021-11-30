@@ -5,9 +5,8 @@ metadata:
   namespace: test-namespace
 spec:
   image: himanshu01/druid:druid-0.12.0-1
-  startScript: echo
-  startArgs:
-    - "Hello World"
+  startScript: sh
+  startArgs: -c for i in /opt/druid/conf/druid/cluster/env/*.env; do source $i; done && /druid.sh
   podAnnotations:
     key1: value1
     key2: value2
