@@ -24,6 +24,7 @@ func TestMakeStatefulSetForBroker(t *testing.T) {
 	addHashToObject(actual)
 
 	expected := new(appsv1.StatefulSet)
+	fmt.Println(string(expected))
 	readAndUnmarshallResource("testdata/broker-statefulset.yaml", &expected, t)
 
 	assertEquals(expected, actual, t)
