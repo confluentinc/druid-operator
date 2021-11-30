@@ -3397,6 +3397,10 @@ spec:
                 type: array
               startScript:
                 type: string
+              startArgs:
+                type: array
+                items:
+                  type: string
               startUpProbes:
                 properties:
                   exec:
