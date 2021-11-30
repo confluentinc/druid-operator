@@ -31,9 +31,10 @@ spec:
       tolerations: []
       affinity: {}
       containers:
-      - command:
-        - bin/run-druid.sh
-        - broker
+      - args:
+          - -c for i in /opt/druid/conf/druid/cluster/env/*.env; do source $i; done && /druid.sh broker
+        command:
+          - sh
         image: himanshu01/druid:druid-0.12.0-1
         name: druid-druid-test-brokers
         env:
