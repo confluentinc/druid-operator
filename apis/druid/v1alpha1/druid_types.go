@@ -50,8 +50,11 @@ type DruidSpec struct {
 	// +optional
 	DeleteOrphanPvc bool `json:"deleteOrphanPvc"`
 
-	// Required: path to druid start script to be run on container start
+	// Required: Command to be run on container start
 	StartScript string `json:"startScript"`
+
+	// Optional: Args to pass to the startScript
+	StartArgs []string `json:"startArgs,omitempty"`
 
 	// Required here or at nodeSpec level
 	Image string `json:"image,omitempty"`

@@ -32,8 +32,9 @@ spec:
       affinity: {}
       containers:
       - command:
-        - bin/run-druid.sh
-        - broker
+        - echo
+        args:
+          - "Hello World"
         image: himanshu01/druid:druid-0.12.0-1
         name: druid-druid-test-brokers
         env:
