@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 
 	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
@@ -977,6 +978,14 @@ func getVolume(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniq
 	return volumesHolder
 }
 
+func getEntryArg(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
+  if (m.Spec.EntryArg != "" && m.Spec.DruidScript != "") {
+      bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", m.Spec.DruidScript, nodeSpec.NodeType}, " ")
+      return []string{"-c", bashCommands}
+  }
+  return nil
+}
+
 func getEnv(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, configMapSHA string) []v1.EnvVar {
 	envHolder := firstNonNilValue(nodeSpec.Env, m.Spec.Env).([]v1.EnvVar)
 	// enables to do the trick to force redeployment in case of configmap changes.
@@ -1151,7 +1160,7 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 				Image:           firstNonEmptyStr(nodeSpec.Image, m.Spec.Image),
 				Name:            fmt.Sprintf("%s", nodeSpecUniqueStr),
 				Command:         []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh")},
-				Args:            m.Spec.StartArgs,
+				Args:            getEntryArg(nodeSpec, m),
 				ImagePullPolicy: v1.PullPolicy(firstNonEmptyStr(string(nodeSpec.ImagePullPolicy), string(m.Spec.ImagePullPolicy))),
 				Ports:           nodeSpec.Ports,
 				Resources:       nodeSpec.Resources,

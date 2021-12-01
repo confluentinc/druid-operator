@@ -53,8 +53,11 @@ type DruidSpec struct {
 	// Required: Command to be run on container start
 	StartScript string `json:"startScript"`
 
-	// Optional: Args to pass to the startScript
-	StartArgs []string `json:"startArgs,omitempty"`
+	// Optional: bash/sh entry commands
+  EntryArg string `json:"entryArg,omitempty"`
+
+	// Optional: druid shell script path
+	DruidScript string `json:"druidScript,omitempty"`
 
 	// Required here or at nodeSpec level
 	Image string `json:"image,omitempty"`
