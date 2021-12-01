@@ -54,7 +54,7 @@ type DruidSpec struct {
 	StartScript string `json:"startScript"`
 
 	// Optional: Args to pass to the startScript
-	StartArgs string `json:"startArgs,omitempty"`
+	StartArgs []string `json:"startArgs,omitempty"`
 
 	// Required here or at nodeSpec level
 	Image string `json:"image,omitempty"`
