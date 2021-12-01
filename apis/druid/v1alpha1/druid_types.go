@@ -54,7 +54,7 @@ type DruidSpec struct {
 	StartScript string `json:"startScript"`
 
 	// Optional: bash/sh entry commands
-  EntryArg string `json:"entryArg,omitempty"`
+	EntryArg string `json:"entryArg,omitempty"`
 
 	// Optional: druid shell script path
 	DruidScript string `json:"druidScript,omitempty"`
@@ -148,7 +148,7 @@ type DruidSpec struct {
 	DeepStorage   *DeepStorageSpec   `json:"deepStorage,omitempty"`
 
 	// Optional: Custom Dimension Map Path for statsd emitter
-	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
+	DimensionsMapPath   string `json:"metricDimensions.json,omitempty"`
 	KafkaPropertiesPath string `json:"kafka.properties,omitempty"`
 }
 
