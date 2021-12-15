@@ -1311,7 +1311,7 @@ spec:
                       type: array
                     ingress:
                       properties:
-                        backend:
+                        defaultBackend:
                           properties:
                             resource:
                               properties:
@@ -1325,13 +1325,21 @@ spec:
                               - kind
                               - name
                               type: object
-                            serviceName:
-                              type: string
-                            servicePort:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              x-kubernetes-int-or-string: true
+                            service:
+                              properties:
+                                name:
+                                  type: string
+                                port:
+                                  properties:
+                                    name:
+                                      type: string
+                                    number:
+                                      format: int32
+                                      type: integer
+                                  type: object
+                              required:
+                              - name
+                              type: object
                           type: object
                         ingressClassName:
                           type: string
@@ -1359,13 +1367,21 @@ spec:
                                               - kind
                                               - name
                                               type: object
-                                            serviceName:
-                                              type: string
-                                            servicePort:
-                                              anyOf:
-                                              - type: integer
-                                              - type: string
-                                              x-kubernetes-int-or-string: true
+                                            service:
+                                              properties:
+                                                name:
+                                                  type: string
+                                                port:
+                                                  properties:
+                                                    name:
+                                                      type: string
+                                                    number:
+                                                      format: int32
+                                                      type: integer
+                                                  type: object
+                                              required:
+                                              - name
+                                              type: object
                                           type: object
                                         path:
                                           type: string
@@ -1375,11 +1391,13 @@ spec:
                                       - backend
                                       type: object
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - paths
                                 type: object
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                         tls:
                           items:
                             properties:
@@ -1387,10 +1405,12 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                                x-kubernetes-list-type: atomic
                               secretName:
                                 type: string
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                       type: object
                     ingressAnnotations:
                       additionalProperties:
@@ -2203,6 +2223,45 @@ spec:
                             type: integer
                           value:
                             type: string
+                        type: object
+                      type: array
+                    topologySpreadConstraints:
+                      items:
+                        properties:
+                          labelSelector:
+                            properties:
+                              matchExpressions:
+                                items:
+                                  properties:
+                                    key:
+                                      type: string
+                                    operator:
+                                      type: string
+                                    values:
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                            type: object
+                          maxSkew:
+                            format: int32
+                            type: integer
+                          topologyKey:
+                            type: string
+                          whenUnsatisfiable:
+                            type: string
+                        required:
+                        - maxSkew
+                        - topologyKey
+                        - whenUnsatisfiable
                         type: object
                       type: array
                     updateStrategy:

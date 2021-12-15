@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 
 	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -273,12 +273,14 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid) error {
 		}
 	}
 
-	if m.Spec.DeleteOrphanPvc {
+	// Ignore on cluster creation
+	if m.Generation > 1 && m.Spec.DeleteOrphanPvc {
 		if err := deleteOrphanPVC(sdk, m); err != nil {
 			e := fmt.Errorf("Error in deleteOrphanPVC due to [%s]", err.Error())
-			sendEvent(sdk, m, v1.EventTypeWarning, "LIST_FAIL", e.Error())
+			sendEvent(sdk, m, v1.EventTypeWarning, DruidNodeDeleteFail, e.Error())
 			logger.Error(e, e.Error(), "name", m.Name, "namespace", m.Namespace)
 		}
+
 	}
 
 	//update status and delete unwanted resources
@@ -323,7 +325,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid) error {
 	updatedStatus.Ingress = deleteUnusedResources(sdk, m, ingressNames, ls,
 		func() objectList { return makeIngressListEmptyObj() },
 		func(listObj runtime.Object) []object {
-			items := listObj.(*networkingv1beta1.IngressList).Items
+			items := listObj.(*networkingv1.IngressList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
 				result[i] = &items[i]
@@ -951,6 +953,16 @@ func getTolerations(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.To
 	return tolerations
 }
 
+func getTopologySpreadConstraints(nodeSpec *v1alpha1.DruidNodeSpec) []v1.TopologySpreadConstraint {
+	var topologySpreadConstraint []v1.TopologySpreadConstraint
+
+	for _, val := range nodeSpec.TopologySpreadConstraints {
+		topologySpreadConstraint = append(topologySpreadConstraint, val)
+	}
+
+	return topologySpreadConstraint
+}
+
 func getVolume(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr string) []v1.Volume {
 	volumesHolder := []v1.Volume{
 		{
@@ -1151,10 +1163,11 @@ func makePodTemplate(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 // makePodSpec shall create podSpec common to both deployment and statefulset.
 func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr, configMapSHA string) v1.PodSpec {
 	spec := v1.PodSpec{
-		NodeSelector:     m.Spec.NodeSelector,
-		Tolerations:      getTolerations(nodeSpec, m),
-		Affinity:         getAffinity(nodeSpec, m),
-		ImagePullSecrets: firstNonNilValue(nodeSpec.ImagePullSecrets, m.Spec.ImagePullSecrets).([]v1.LocalObjectReference),
+		NodeSelector:              m.Spec.NodeSelector,
+		TopologySpreadConstraints: getTopologySpreadConstraints(nodeSpec),
+		Tolerations:               getTolerations(nodeSpec, m),
+		Affinity:                  getAffinity(nodeSpec, m),
+		ImagePullSecrets:          firstNonNilValue(nodeSpec.ImagePullSecrets, m.Spec.ImagePullSecrets).([]v1.LocalObjectReference),
 		Containers: []v1.Container{
 			{
 				Image:           firstNonEmptyStr(nodeSpec.Image, m.Spec.Image),
@@ -1230,12 +1243,12 @@ func makeHorizontalPodAutoscaler(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.D
 	return hpa, nil
 }
 
-func makeIngress(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*networkingv1beta1.Ingress, error) {
+func makeIngress(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*networkingv1.Ingress, error) {
 	nodeIngressSpec := *nodeSpec.Ingress
 
-	ingress := &networkingv1beta1.Ingress{
+	ingress := &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "networking.k8s.io/v1beta1",
+			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -1371,10 +1384,10 @@ func makeHorizontalPodAutoscalerListEmptyObj() *autoscalev2beta2.HorizontalPodAu
 	}
 }
 
-func makeIngressListEmptyObj() *networkingv1beta1.IngressList {
-	return &networkingv1beta1.IngressList{
+func makeIngressListEmptyObj() *networkingv1.IngressList {
+	return &networkingv1.IngressList{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "networking.k8s.io/v1beta1",
+			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
 	}
@@ -1461,10 +1474,10 @@ func makePersistentVolumeClaimListEmptyObj() *v1.PersistentVolumeClaimList {
 	}
 }
 
-func makeIngressEmptyObj() *networkingv1beta1.Ingress {
-	return &networkingv1beta1.Ingress{
+func makeIngressEmptyObj() *networkingv1.Ingress {
+	return &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "networking.k8s.io/v1beta1",
+			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
 	}
