@@ -53,7 +53,7 @@ type DruidSpec struct {
 	// Required: Command to be run on container start
 	StartScript string `json:"startScript"`
 
-	// Optional: bash/sh entry commands
+	// Optional: bash/sh entry arg, eg. `sh -c ${EntryArg}`
 	EntryArg string `json:"entryArg,omitempty"`
 
 	// Optional: druid shell script path
