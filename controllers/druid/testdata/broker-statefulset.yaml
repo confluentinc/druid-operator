@@ -8,7 +8,7 @@ metadata:
     druid_cr: druid-test
     nodeSpecUniqueStr: druid-druid-test-brokers
   annotations:
-    druidOpResourceHash: yx++RFoz8AU/TZtWDwIKtNFh+7o=
+    druidOpResourceHash: OnEopGbFnwSCMqd84ePrk0Kvd9o=
 spec:
   podManagementPolicy: Parallel
   replicas: 2
@@ -32,10 +32,8 @@ spec:
       affinity: {}
       containers:
       - command:
-        - sh
-        args:
-        - -c
-        - for i in /opt/druid/conf/druid/cluster/env/*.env; do source $i; done && /druid.sh broker
+        - bin/run-druid.sh
+        - broker
         image: himanshu01/druid:druid-0.12.0-1
         name: druid-druid-test-brokers
         env:
