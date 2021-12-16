@@ -988,7 +988,7 @@ func getCommand(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
 func getEntryArg(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
   if (m.Spec.EntryArg != "") {
       bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", firstNonEmptyStr(m.Spec.DruidScript, "bin/run-druid.sh"), nodeSpec.NodeType}, " ")
-      return []string{bashCommands}
+      return []string{"-c", bashCommands}
   }
   return nil
 }
