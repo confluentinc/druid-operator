@@ -6,7 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -50,8 +50,14 @@ type DruidSpec struct {
 	// +optional
 	DeleteOrphanPvc bool `json:"deleteOrphanPvc"`
 
-	// Required: path to druid start script to be run on container start
+	// Required: Command to be run on container start
 	StartScript string `json:"startScript"`
+
+	// Optional: bash/sh entry commands
+	EntryArg string `json:"entryArg,omitempty"`
+
+	// Optional: druid shell script path
+	DruidScript string `json:"druidScript,omitempty"`
 
 	// Required here or at nodeSpec level
 	Image string `json:"image,omitempty"`
@@ -142,7 +148,7 @@ type DruidSpec struct {
 	DeepStorage   *DeepStorageSpec   `json:"deepStorage,omitempty"`
 
 	// Optional: Custom Dimension Map Path for statsd emitter
-	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
+	DimensionsMapPath   string `json:"metricDimensions.json,omitempty"`
 	KafkaPropertiesPath string `json:"kafka.properties,omitempty"`
 }
 
@@ -249,7 +255,7 @@ type DruidNodeSpec struct {
 	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 
 	// Optional: Ingress Spec
-	Ingress *networkingv1beta1.IngressSpec `json:"ingress,omitempty"`
+	Ingress *networkingv1.IngressSpec `json:"ingress,omitempty"`
 
 	// Optional: Persistant volume claim
 	PersistentVolumeClaim []v1.PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
@@ -259,6 +265,9 @@ type DruidNodeSpec struct {
 
 	// Optional
 	HPAutoScaler *autoscalev2beta2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
+
+	// Optional
+	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 	VolumeMounts         []v1.VolumeMount           `json:"volumeMounts,omitempty"`
