@@ -1578,6 +1578,10 @@ spec:
                       type: integer
                     nodeConfigMountPath:
                       type: string
+                    nodeSelector:
+                      additionalProperties:
+                        type: string
+                      type: object
                     nodeType:
                       type: string
                     persistentVolumeClaim:
