@@ -9,18 +9,10 @@ blocks:
     task:
       prologue:
         commands:
-          - sem-version go 1.15
+          - sem-version go 1.17
           - checkout
       jobs:
-        - name: Build
-          env_vars:
-            - name: KUBEBUILDER_VERSION
-              value: 2.3.1
-            - name: OS_ARCH
-              value: amd64
+        - name: Build and Test
           commands:
-            - make init-ci
-            # Build and Test
-            - go mod download
             - make manager
             - make test
