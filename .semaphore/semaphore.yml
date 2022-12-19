@@ -9,10 +9,13 @@ blocks:
     task:
       prologue:
         commands:
-          - sem-version go 1.17
+          - sem-version go 1.19
           - checkout
       jobs:
-        - name: Build and Test
+        - name: Build, Test
           commands:
-            - make manager
+            - make build
             - make test
+            - make lint
+            - make template
+            - make docker-build
