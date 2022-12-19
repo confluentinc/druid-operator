@@ -9,10 +9,9 @@ blocks:
     task:
       prologue:
         commands:
-          - sem-version go 1.17
+          - sem-version go 1.19
           - checkout
       jobs:
         - name: Build and Test
           commands:
-            - make manager
-            - make test
+            - make all
