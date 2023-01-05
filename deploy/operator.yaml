@@ -17,6 +17,7 @@ spec:
         - name: druid-operator
           # Replace this with the built image name
           image: druidio/druid-operator:latest
+          image: druidio/druid-operator:latest
           command:
           - /manager
           imagePullPolicy: IfNotPresent
