@@ -76,6 +76,9 @@ type DruidSpec struct {
 	//Required: AWS EC2 instance type
 	InstanceType string `json:"instanceType,omitempty"`
 
+	//Optional: Make use of local storage for historical nodes
+	UseLocalStorage bool `json:"useLocalStorage,omitempty"`
+
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback

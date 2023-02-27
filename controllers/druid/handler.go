@@ -2083,12 +2083,17 @@ func makeNodeGrabber(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 	}
 }
 
-func checkIfHistoricalExists(m *v1alpha1.Druid) bool {
-	if _, ok := m.Spec.Nodes[historical]; ok {
-		return true
+func checkUseLocalStorage(m *v1alpha1.Druid) bool {
+	if m.Spec.UseLocalStorage {
+		if _, ok := m.Spec.Nodes[historical]; ok {
+			return true
+		} else {
+			return false
+		}
 	} else {
 		return false
 	}
+
 }
 
 func makeLabelsForLocalStorage() map[string]string {
@@ -2112,7 +2117,7 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 		router:                 make([]keyAndNodeSpec, 0, 1),
 	}
 
-	if checkIfHistoricalExists(m) {
+	if checkUseLocalStorage(m) {
 		nodeSpecsByNodeType[eksNvmeProvisioner] = append(
 			nodeSpecsByNodeType[eksNvmeProvisioner],
 			keyAndNodeSpec{eksNvmeProvisioner, *makeEKSNVMEProvisioner(m)},
@@ -2138,7 +2143,7 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 
 	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
 
-	if checkIfHistoricalExists(m) {
+	if checkUseLocalStorage(m) {
 		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[eksNvmeProvisioner]...)
 		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[localVolumeProvisioner]...)
 		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[nodeGrabber]...)
