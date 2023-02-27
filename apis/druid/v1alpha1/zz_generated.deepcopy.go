@@ -132,6 +132,11 @@ func (in *DruidClusterStatus) DeepCopyInto(out *DruidClusterStatus) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.DaemonSets != nil {
+		in, out := &in.DaemonSets, &out.DaemonSets
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Services != nil {
 		in, out := &in.Services, &out.Services
 		*out = make([]string, len(*in))
@@ -280,6 +285,11 @@ func (in *DruidNodeSpec) DeepCopyInto(out *DruidNodeSpec) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.Command != nil {
+		in, out := &in.Command, &out.Command
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.PodSecurityContext != nil {
