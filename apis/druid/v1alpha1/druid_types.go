@@ -73,6 +73,9 @@ type DruidSpec struct {
 	// Required: common.runtime.properties contents
 	CommonRuntimeProperties string `json:"common.runtime.properties"`
 
+	//Required: AWS EC2 instance type
+	InstanceType string `json:"instanceType,omitempty"`
+
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback
@@ -265,6 +268,9 @@ type DruidNodeSpec struct {
 	// Optional: Extra environment variables
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 
+	//Optional: Container startup command
+	Command []string `json:"command,omitempty"`
+
 	// Optional: CPU/Memory Resources
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
@@ -363,6 +369,7 @@ type DruidClusterStatus struct {
 	DruidNodeStatus        DruidNodeTypeStatus `json:"druidNodeStatus,omitempty"`
 	StatefulSets           []string            `json:"statefulSets,omitempty"`
 	Deployments            []string            `json:"deployments,omitempty"`
+	DaemonSets             []string            `json:"daemonsets,omitempty"`
 	Services               []string            `json:"services,omitempty"`
 	ConfigMaps             []string            `json:"configMaps,omitempty"`
 	PodDisruptionBudgets   []string            `json:"podDisruptionBudgets,omitempty"`
