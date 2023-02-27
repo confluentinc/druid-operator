@@ -11,6 +11,7 @@ rules:
       - configmaps
       - services
       - persistentvolumeclaims
+      - persistentvolumes
     verbs:
       - list
       - watch
@@ -30,6 +31,7 @@ rules:
     resources:
       - statefulsets
       - deployments
+      - daemonsets
     verbs:
       - list
       - watch
