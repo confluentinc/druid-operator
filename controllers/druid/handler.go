@@ -38,6 +38,9 @@ const (
 	indexer                      = "indexer"
 	historical                   = "historical"
 	router                       = "router"
+	nodeGrabber                  = "nodeGrabber"
+	localVolumeProvisioner       = "localVolumeProvisioner"
+	eksNvmeProvisioner           = "eksNvmeProvisioner"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
 	finalizerName                = "deletepvc.finalizers.druid.apache.org"
 )
@@ -62,6 +65,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 		return nil
 	}
 
+	daemonsetNames := make(map[string]bool)
 	statefulSetNames := make(map[string]bool)
 	deploymentNames := make(map[string]bool)
 	serviceNames := make(map[string]bool)
@@ -119,6 +123,11 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 			}
 		}
 	}
+	exclusions := map[string]struct{}{
+		localVolumeProvisioner: {},
+		nodeGrabber:            {},
+		eksNvmeProvisioner:     {},
+	}
 
 	for _, elem := range allNodeSpecs {
 		key := elem.key
@@ -130,22 +139,30 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 
 		lm := makeLabelsForNodeSpec(&nodeSpec, m, m.Name, nodeSpecUniqueStr)
 
+		var nodeConfigSHA string
 		// create configmap first
-		nodeConfig, err := makeConfigMapForNodeSpec(&nodeSpec, m, lm, nodeSpecUniqueStr)
-		if err != nil {
-			return err
-		}
+		if _, ok := exclusions[key]; ok {
+			// skip creating config map for local storage objects
+			nodeConfigSHA = "internal"
+		} else {
+			nodeConfig, err := makeConfigMapForNodeSpec(&nodeSpec, m, lm, nodeSpecUniqueStr)
+			if err != nil {
+				return err
+			}
 
-		nodeConfigSHA, err := getObjectHash(nodeConfig)
-		if err != nil {
-			return err
-		}
+			nodeConfigSHA, err = getObjectHash(nodeConfig)
+			if err != nil {
+				return err
+			}
 
-		if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-			func() (object, error) { return nodeConfig, nil },
-			func() object { return makeConfigMapEmptyObj() },
-			alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
-			return err
+			if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+				func() (object, error) { return nodeConfig, nil },
+				func() object { return makeConfigMapEmptyObj() },
+				alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
+				return err
+			}
+			nodeSpec.Ports = append(nodeSpec.Ports, v1.ContainerPort{ContainerPort: nodeSpec.DruidPort, Name: "druid-port"})
+
 		}
 
 		//create services before creating statefulset
@@ -163,8 +180,6 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 				firstServiceName = svc.ObjectMeta.Name
 			}
 		}
-
-		nodeSpec.Ports = append(nodeSpec.Ports, v1.ContainerPort{ContainerPort: nodeSpec.DruidPort, Name: "druid-port"})
 
 		if nodeSpec.Kind == "Deployment" {
 			if deployCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(sdk,
@@ -191,7 +206,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 					}
 				}
 			}
-		} else {
+		} else if nodeSpec.Kind == "Statefulset" {
 
 			//	scalePVCForSTS to be only called only if volumeExpansion is supported by the storage class.
 			//  Ignore for the first iteration ie cluster creation, else get sts shall unnecessary log errors.
@@ -233,10 +248,16 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 						return err
 					}
 				}
+			} else {
+				if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+					func() (object, error) {
+						return makeDaemonset(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
+					},
+					func() object { return makeDaemonsetEmptyObj() },
+					deploymentIsEquals, noopUpdaterFn, m, daemonsetNames, emitEvents); err != nil {
+					return err
+				}
 			}
-
-			// Default is set to true
-			execCheckCrashStatus(sdk, &nodeSpec, m, emitEvents)
 		}
 
 		// Create Ingress Spec
@@ -740,6 +761,8 @@ func isObjFullyDeployed(sdk client.Client, nodeSpec v1alpha1.DruidNodeSpec, node
 				return obj.(*appsv1.Deployment).Status.ReadyReplicas == obj.(*appsv1.Deployment).Status.Replicas, nil
 			}
 		}
+	} else if detectType(obj) == "*v1.Daemonset" {
+		return true, nil
 	}
 	return false, nil
 }
@@ -1234,6 +1257,21 @@ func makeStatefulSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 	}, nil
 }
 
+func makeDaemonset(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr, configMapSHA, serviceName string) (*appsv1.DaemonSet, error) {
+
+	return &appsv1.DaemonSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Daemonset",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s", nodeSpecUniqueStr),
+			Namespace: m.Namespace,
+			Labels:    ls,
+		},
+		Spec: makeDaemonsetSpec(nodeSpec, m, ls, nodeSpecUniqueStr, configMapSHA, serviceName),
+	}, nil
+}
 func statefulSetIsEquals(obj1, obj2 object) bool {
 
 	// This used to match replica counts, but was reverted to fix https://github.com/druid-io/druid-operator/issues/160
@@ -1286,6 +1324,22 @@ func makeStatefulSetSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls
 
 	return stsSpec
 
+}
+
+// makeDaemonsetSpec shall create daemonset spec for daemonsets.
+func makeDaemonsetSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecificUniqueString, configMapSHA, serviceName string) appsv1.DaemonSetSpec {
+	deploySpec := appsv1.DaemonSetSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: ls,
+		},
+		Template: makePodTemplate(nodeSpec, m, ls, nodeSpecificUniqueString, configMapSHA),
+		UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+			Type:          "RollingUpdate",
+			RollingUpdate: (*appsv1.RollingUpdateDaemonSet)(getRollingUpdateStrategy(nodeSpec)),
+		},
+	}
+
+	return deploySpec
 }
 
 // makeDeploymentSpec shall create deployment Spec for deployments.
@@ -1628,6 +1682,15 @@ func makeDeploymentEmptyObj() *appsv1.Deployment {
 	}
 }
 
+func makeDaemonsetEmptyObj() *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "Daemonset",
+		},
+	}
+}
+
 func makePodDisruptionBudgetEmptyObj() *v1beta1.PodDisruptionBudget {
 	return &v1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
@@ -1758,6 +1821,10 @@ func verifyDruidSpec(drd *v1alpha1.Druid) error {
 
 	errorMsg := ""
 
+	if drd.Spec.InstanceType == "" {
+		errorMsg = fmt.Sprint("%sInstanceType missing from Druid Cluster Spec\n", errorMsg)
+	}
+
 	if drd.Spec.CommonRuntimeProperties == "" {
 		errorMsg = fmt.Sprintf("%sCommonRuntimeProperties missing from Druid Cluster Spec\n", errorMsg)
 	}
@@ -1804,16 +1871,179 @@ type keyAndNodeSpec struct {
 	spec v1alpha1.DruidNodeSpec
 }
 
+func makeEKSNVMEProvisioner(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
+	hostPathUnset := v1.HostPathUnset
+	mountPropagation := v1.MountPropagationBidirectional
+	_true := true
+	return &v1alpha1.DruidNodeSpec{
+		Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0",
+		ImagePullPolicy: v1.PullAlways,
+		Kind:            "Daemonset",
+		Replicas:        m.Spec.Nodes[historical].Replicas,
+		ContainerSecurityContext: &v1.SecurityContext{
+			Privileged: &_true,
+		},
+		Volumes: []v1.Volume{
+			{
+				Name: "pv-disks",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/pv-disks",
+						Type: &hostPathUnset,
+					},
+				},
+			},
+			{
+				Name: "nvme",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/nvme",
+						Type: &hostPathUnset,
+					},
+				},
+			},
+		},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				MountPath:        "/pv-disks",
+				MountPropagation: &mountPropagation,
+				Name:             "pv-disks",
+			},
+			{
+				MountPath:        "/nvme",
+				MountPropagation: &mountPropagation,
+				Name:             "nvme",
+			},
+		},
+	}
+}
+
+func makeLocalVolumeProvisioner(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
+	hostPathUnset := v1.HostPathUnset
+	configMapVolumeMode := int32(0420)
+	mountPropagation := v1.MountPropagationHostToContainer
+	_true := true
+	return &v1alpha1.DruidNodeSpec{
+		Kind:     "Daemonset",
+		Replicas: m.Spec.Nodes[historical].Replicas,
+		Volumes: []v1.Volume{
+			{
+				Name: "local-storage",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/pv-disks",
+						Type: &hostPathUnset,
+					},
+				},
+			},
+			{
+				Name: "provisioner-dev",
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: "/dev",
+						Type: &hostPathUnset,
+					},
+				},
+			},
+			{
+				Name: "provisioner-config",
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						DefaultMode: &configMapVolumeMode,
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "local-provisioner-config",
+						},
+					},
+				},
+			},
+		},
+		Image:           "quay.io/external_storage/local-volume-provisioner:v2.3.3",
+		ImagePullPolicy: v1.PullAlways,
+		VolumeMounts: []v1.VolumeMount{
+			{
+				MountPath: "/etc/provisioner/config",
+				Name:      "provisioner-config",
+				ReadOnly:  true,
+			},
+			{
+				MountPath: "/dev",
+				Name:      "provisioner-dev",
+			},
+			{
+				MountPath:        "/pv-disks",
+				MountPropagation: &mountPropagation,
+				Name:             "local-storage",
+			},
+		},
+		Resources: v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+				v1.ResourceMemory: *resource.NewQuantity(100*1024*1024, resource.BinarySI),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    *resource.NewMilliQuantity(100, resource.DecimalSI),
+				v1.ResourceMemory: *resource.NewQuantity(200*1024*1024, resource.BinarySI),
+			},
+		},
+		ContainerSecurityContext: &v1.SecurityContext{
+			Privileged: &_true,
+		},
+	}
+}
+
+func makeNodeGrabber(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
+	return &v1alpha1.DruidNodeSpec{
+		Kind:            "Deployment",
+		Replicas:        m.Spec.Nodes[historical].Replicas,
+		Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-base-alpine:v2.7.0",
+		Command:         []string{"tail", "-f", "/dev/null"},
+		ImagePullPolicy: v1.PullAlways,
+		Resources: v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    *resource.NewMilliQuantity(50, resource.DecimalSI),
+				v1.ResourceMemory: *resource.NewQuantity(50*1024*1024, resource.BinarySI),
+			},
+		},
+		Ports: []v1.ContainerPort{{
+			ContainerPort: 28140,
+			Name:          "hello",
+			HostPort:      28140,
+			Protocol:      "TCP",
+		}},
+		NodeSelector: map[string]string{
+			"beta.kubernetes.io/instance-type": m.Spec.InstanceType,
+		},
+	}
+}
+
 // Recommended prescribed order is described at http://druid.io/docs/latest/operations/rolling-updates.html
 func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec, error) {
 	nodeSpecsByNodeType := map[string][]keyAndNodeSpec{
-		historical:    make([]keyAndNodeSpec, 0, 1),
-		overlord:      make([]keyAndNodeSpec, 0, 1),
-		middleManager: make([]keyAndNodeSpec, 0, 1),
-		indexer:       make([]keyAndNodeSpec, 0, 1),
-		broker:        make([]keyAndNodeSpec, 0, 1),
-		coordinator:   make([]keyAndNodeSpec, 0, 1),
-		router:        make([]keyAndNodeSpec, 0, 1),
+		eksNvmeProvisioner:     make([]keyAndNodeSpec, 0, 1),
+		localVolumeProvisioner: make([]keyAndNodeSpec, 0, 1),
+		nodeGrabber:            make([]keyAndNodeSpec, 0, 1),
+		historical:             make([]keyAndNodeSpec, 0, 1),
+		overlord:               make([]keyAndNodeSpec, 0, 1),
+		middleManager:          make([]keyAndNodeSpec, 0, 1),
+		indexer:                make([]keyAndNodeSpec, 0, 1),
+		broker:                 make([]keyAndNodeSpec, 0, 1),
+		coordinator:            make([]keyAndNodeSpec, 0, 1),
+		router:                 make([]keyAndNodeSpec, 0, 1),
+	}
+
+	if _, ok := m.Spec.Nodes[historical]; ok {
+		nodeSpecsByNodeType[eksNvmeProvisioner] = append(
+			nodeSpecsByNodeType[eksNvmeProvisioner],
+			keyAndNodeSpec{eksNvmeProvisioner, *makeEKSNVMEProvisioner(m)},
+		)
+		nodeSpecsByNodeType[localVolumeProvisioner] = append(
+			nodeSpecsByNodeType[localVolumeProvisioner],
+			keyAndNodeSpec{localVolumeProvisioner, *makeLocalVolumeProvisioner(m)},
+		)
+		nodeSpecsByNodeType[nodeGrabber] = append(
+			nodeSpecsByNodeType[nodeGrabber],
+			keyAndNodeSpec{nodeGrabber, *makeNodeGrabber(m)},
+		)
 	}
 
 	for key, nodeSpec := range m.Spec.Nodes {
@@ -1827,6 +2057,9 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 
 	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
 
+	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[eksNvmeProvisioner]...)
+	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[localVolumeProvisioner]...)
+	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[nodeGrabber]...)
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[historical]...)
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[overlord]...)
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[middleManager]...)
