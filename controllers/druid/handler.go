@@ -97,7 +97,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 		Default Behavior: Finalizer shall be always executed resulting in deletion of pvc post deletion of Druid CR
 		When the object (druid CR) has for deletion time stamp set, execute the finalizer
 		Finalizer shall execute the following flow :
-		1. Get sts List and PVC List
+		1. Get sts List, PVC List, DaemonSet List and
 		2. Range and Delete sts first and then delete pvc. PVC must be deleted after sts termination has been executed
 			else pvc finalizer shall block deletion since a pod/sts is referencing it.
 		3. Once delete is executed we block program and return.
@@ -251,9 +251,9 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 			} else {
 				if _, err := sdkCreateOrUpdateAsNeeded(sdk,
 					func() (object, error) {
-						return makeDaemonset(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
+						return makeDaemonSet(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 					},
-					func() object { return makeDaemonsetEmptyObj() },
+					func() object { return makeDaemonSetEmptyObj() },
 					deploymentIsEquals, noopUpdaterFn, m, daemonsetNames, emitEvents); err != nil {
 					return err
 				}
@@ -330,7 +330,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 	sort.Strings(updatedStatus.StatefulSets)
 
 	updatedStatus.Deployments = deleteUnusedResources(sdk, m, deploymentNames, ls,
-		func() objectList { return makeDeloymentListEmptyObj() },
+		func() objectList { return makeDeploymentListEmptyObj() },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*appsv1.DeploymentList).Items
 			result := make([]object, len(items))
@@ -340,6 +340,18 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 			return result
 		}, emitEvents)
 	sort.Strings(updatedStatus.Deployments)
+
+	updatedStatus.DaemonSets = deleteUnusedResources(sdk, m, daemonsetNames, ls,
+		func() objectList { return makeDaemonSetListEmptyObj() },
+		func(listObj runtime.Object) []object {
+			items := listObj.(*appsv1.DaemonSetList).Items
+			result := make([]object, len(items))
+			for i := 0; i < len(items); i++ {
+				result[i] = &items[i]
+			}
+			return result
+		}, emitEvents)
+	sort.Strings(updatedStatus.DaemonSets)
 
 	updatedStatus.HPAutoScalers = deleteUnusedResources(sdk, m, hpaNames, ls,
 		func() objectList { return makeHorizontalPodAutoscalerListEmptyObj() },
@@ -435,7 +447,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 	return nil
 }
 
-func deleteSTSAndPVC(sdk client.Client, drd *v1alpha1.Druid, stsList, pvcList []object, emitEvents EventEmitter) error {
+func deleteMarkedResource(sdk client.Client, drd *v1alpha1.Druid, stsList, pvcList, dsList, depList []object, emitEvents EventEmitter) error {
 
 	for _, sts := range stsList {
 		err := writers.Delete(context.TODO(), sdk, drd, sts, emitEvents, &client.DeleteAllOfOptions{})
@@ -446,6 +458,20 @@ func deleteSTSAndPVC(sdk client.Client, drd *v1alpha1.Druid, stsList, pvcList []
 
 	for i := range pvcList {
 		err := writers.Delete(context.TODO(), sdk, drd, pvcList[i], emitEvents, &client.DeleteAllOfOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	for i := range dsList {
+		err := writers.Delete(context.TODO(), sdk, drd, dsList[i], emitEvents, &client.DeleteAllOfOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	for i := range depList {
+		err := writers.Delete(context.TODO(), sdk, drd, dsList[i], emitEvents, &client.DeleteAllOfOptions{})
 		if err != nil {
 			return err
 		}
@@ -543,6 +569,8 @@ func executeFinalizers(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmi
 			"druid_cr": m.Name,
 		}
 
+		storageLabels := makeLabelsForLocalStorage()
+
 		pvcList, err := readers.List(context.TODO(), sdk, m, pvcLabels, emitEvents, func() objectList { return makePersistentVolumeClaimListEmptyObj() }, func(listObj runtime.Object) []object {
 			items := listObj.(*v1.PersistentVolumeClaimList).Items
 			result := make([]object, len(items))
@@ -567,10 +595,34 @@ func executeFinalizers(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmi
 			return err
 		}
 
+		dsList, err := readers.List(context.TODO(), sdk, m, storageLabels, emitEvents, func() objectList { return makeDaemonSetListEmptyObj() }, func(listObj runtime.Object) []object {
+			items := listObj.(*appsv1.DaemonSetList).Items
+			result := make([]object, len(items))
+			for i := 0; i < len(items); i++ {
+				result[i] = &items[i]
+			}
+			return result
+		})
+		if err != nil {
+			return err
+		}
+
+		depList, err := readers.List(context.TODO(), sdk, m, storageLabels, emitEvents, func() objectList { return makeDeploymentListEmptyObj() }, func(listObj runtime.Object) []object {
+			items := listObj.(*appsv1.DeploymentList).Items
+			result := make([]object, len(items))
+			for i := 0; i < len(items); i++ {
+				result[i] = &items[i]
+			}
+			return result
+		})
+		if err != nil {
+			return err
+		}
+
 		msg := fmt.Sprintf("Trigerring finalizer for CR [%s] in namespace [%s]", m.Name, m.Namespace)
 		//		sendEvent(sdk, m, v1.EventTypeNormal, DruidFinalizer, msg)
 		logger.Info(msg)
-		if err := deleteSTSAndPVC(sdk, m, stsList, pvcList, emitEvents); err != nil {
+		if err := deleteMarkedResource(sdk, m, stsList, pvcList, dsList, depList, emitEvents); err != nil {
 			return err
 		} else {
 			msg := fmt.Sprintf("Finalizer success for CR [%s] in namespace [%s]", m.Name, m.Namespace)
@@ -761,7 +813,7 @@ func isObjFullyDeployed(sdk client.Client, nodeSpec v1alpha1.DruidNodeSpec, node
 				return obj.(*appsv1.Deployment).Status.ReadyReplicas == obj.(*appsv1.Deployment).Status.Replicas, nil
 			}
 		}
-	} else if detectType(obj) == "*v1.Daemonset" {
+	} else if detectType(obj) == "*v1.DaemonSet" {
 		return true, nil
 	}
 	return false, nil
@@ -1257,11 +1309,11 @@ func makeStatefulSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 	}, nil
 }
 
-func makeDaemonset(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr, configMapSHA, serviceName string) (*appsv1.DaemonSet, error) {
+func makeDaemonSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr, configMapSHA, serviceName string) (*appsv1.DaemonSet, error) {
 
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Daemonset",
+			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -1269,7 +1321,7 @@ func makeDaemonset(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[s
 			Namespace: m.Namespace,
 			Labels:    ls,
 		},
-		Spec: makeDaemonsetSpec(nodeSpec, m, ls, nodeSpecUniqueStr, configMapSHA, serviceName),
+		Spec: makeDaemonSetSpec(nodeSpec, m, ls, nodeSpecUniqueStr, configMapSHA, serviceName),
 	}, nil
 }
 func statefulSetIsEquals(obj1, obj2 object) bool {
@@ -1326,8 +1378,8 @@ func makeStatefulSetSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls
 
 }
 
-// makeDaemonsetSpec shall create daemonset spec for daemonsets.
-func makeDaemonsetSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecificUniqueString, configMapSHA, serviceName string) appsv1.DaemonSetSpec {
+// makeDaemonSetSpec shall create daemonset spec for daemonsets.
+func makeDaemonSetSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecificUniqueString, configMapSHA, serviceName string) appsv1.DaemonSetSpec {
 	deploySpec := appsv1.DaemonSetSpec{
 		Selector: &metav1.LabelSelector{
 			MatchLabels: ls,
@@ -1601,7 +1653,16 @@ func makeStatefulSetListEmptyObj() *appsv1.StatefulSetList {
 	}
 }
 
-func makeDeloymentListEmptyObj() *appsv1.DeploymentList {
+func makeDaemonSetListEmptyObj() *appsv1.DaemonSetList {
+	return &appsv1.DaemonSetList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DaemonSet",
+			APIVersion: "apps/v1",
+		},
+	}
+}
+
+func makeDeploymentListEmptyObj() *appsv1.DeploymentList {
 	return &appsv1.DeploymentList{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -1682,11 +1743,11 @@ func makeDeploymentEmptyObj() *appsv1.Deployment {
 	}
 }
 
-func makeDaemonsetEmptyObj() *appsv1.DaemonSet {
+func makeDaemonSetEmptyObj() *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
-			Kind:       "Daemonset",
+			Kind:       "DaemonSet",
 		},
 	}
 }
@@ -1877,8 +1938,10 @@ func makeEKSNVMEProvisioner(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 	_true := true
 	return &v1alpha1.DruidNodeSpec{
 		Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0",
+		NodeType:        eksNvmeProvisioner,
 		ImagePullPolicy: v1.PullAlways,
-		Kind:            "Daemonset",
+		Kind:            "DaemonSet",
+		PodLabels:       makeLabelsForLocalStorage(),
 		Replicas:        m.Spec.Nodes[historical].Replicas,
 		ContainerSecurityContext: &v1.SecurityContext{
 			Privileged: &_true,
@@ -1924,8 +1987,10 @@ func makeLocalVolumeProvisioner(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 	mountPropagation := v1.MountPropagationHostToContainer
 	_true := true
 	return &v1alpha1.DruidNodeSpec{
-		Kind:     "Daemonset",
-		Replicas: m.Spec.Nodes[historical].Replicas,
+		Kind:      "DaemonSet",
+		NodeType:  localVolumeProvisioner,
+		Replicas:  m.Spec.Nodes[historical].Replicas,
+		PodLabels: makeLabelsForLocalStorage(),
 		Volumes: []v1.Volume{
 			{
 				Name: "local-storage",
@@ -1994,6 +2059,8 @@ func makeLocalVolumeProvisioner(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 func makeNodeGrabber(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 	return &v1alpha1.DruidNodeSpec{
 		Kind:            "Deployment",
+		NodeType:        nodeGrabber,
+		PodLabels:       makeLabelsForLocalStorage(),
 		Replicas:        m.Spec.Nodes[historical].Replicas,
 		Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-base-alpine:v2.7.0",
 		Command:         []string{"tail", "-f", "/dev/null"},
@@ -2016,6 +2083,20 @@ func makeNodeGrabber(m *v1alpha1.Druid) *v1alpha1.DruidNodeSpec {
 	}
 }
 
+func checkIfHistoricalExists(m *v1alpha1.Druid) bool {
+	if _, ok := m.Spec.Nodes[historical]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func makeLabelsForLocalStorage() map[string]string {
+	return map[string]string{
+		"subType": "localStorage",
+	}
+}
+
 // Recommended prescribed order is described at http://druid.io/docs/latest/operations/rolling-updates.html
 func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec, error) {
 	nodeSpecsByNodeType := map[string][]keyAndNodeSpec{
@@ -2031,7 +2112,7 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 		router:                 make([]keyAndNodeSpec, 0, 1),
 	}
 
-	if _, ok := m.Spec.Nodes[historical]; ok {
+	if checkIfHistoricalExists(m) {
 		nodeSpecsByNodeType[eksNvmeProvisioner] = append(
 			nodeSpecsByNodeType[eksNvmeProvisioner],
 			keyAndNodeSpec{eksNvmeProvisioner, *makeEKSNVMEProvisioner(m)},
@@ -2057,9 +2138,12 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 
 	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
 
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[eksNvmeProvisioner]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[localVolumeProvisioner]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[nodeGrabber]...)
+	if checkIfHistoricalExists(m) {
+		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[eksNvmeProvisioner]...)
+		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[localVolumeProvisioner]...)
+		allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[nodeGrabber]...)
+	}
+
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[historical]...)
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[overlord]...)
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[middleManager]...)

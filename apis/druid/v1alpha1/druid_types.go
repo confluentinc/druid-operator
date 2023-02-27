@@ -369,6 +369,7 @@ type DruidClusterStatus struct {
 	DruidNodeStatus        DruidNodeTypeStatus `json:"druidNodeStatus,omitempty"`
 	StatefulSets           []string            `json:"statefulSets,omitempty"`
 	Deployments            []string            `json:"deployments,omitempty"`
+	DaemonSets             []string            `json:"daemonsets,omitempty"`
 	Services               []string            `json:"services,omitempty"`
 	ConfigMaps             []string            `json:"configMaps,omitempty"`
 	PodDisruptionBudgets   []string            `json:"podDisruptionBudgets,omitempty"`
