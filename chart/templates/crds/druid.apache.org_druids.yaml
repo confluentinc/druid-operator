@@ -1494,6 +1494,15 @@ spec:
                 description: 'Optional: Default is set to false, pvc shall be deleted
                   on deletion of CR'
                 type: boolean
+              druidScript:
+                description: 'Optional: Customized druid shell script path. If not
+                  set, the default would be "bin/run-druid.sh"'
+                type: string
+              entryArg:
+                description: 'Optional: bash/sh entry arg. Set startScript to `sh`
+                  or `bash` to customize entryArg For example, the container can run
+                  `sh -c "${EntryArg} && ${DruidScript} {nodeType}"`'
+                type: string
               env:
                 description: 'Optional: environment variables for druid containers'
                 items:
@@ -1666,6 +1675,9 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              instanceType:
+                description: 'Required: AWS EC2 instance type'
+                type: string
               jvm.options:
                 description: 'Optional: jvm options for druid jvm processes'
                 type: string
@@ -2730,6 +2742,11 @@ spec:
                               type: array
                           type: object
                       type: object
+                    command:
+                      description: 'Optional: Container startup command'
+                      items:
+                        type: string
+                      type: array
                     containerSecurityContext:
                       description: 'Optional: druid pods container-security-context'
                       properties:
@@ -8844,12 +8861,7 @@ spec:
                   type: object
                 type: array
               startScript:
-                description: 'Required: path to druid start script to be run on container
-                  start'
-                type: string
-              entryArg:
-                type: string
-              druidScript:
+                description: 'Required: Command to be run on container start'
                 type: string
               startUpProbe:
                 description: 'Optional: StartupProbe for nodeSpec'
@@ -9052,6 +9064,9 @@ spec:
                       Default is RollingUpdate.
                     type: string
                 type: object
+              useLocalStorage:
+                description: 'Optional: Make use of local storage for historical nodes'
+                type: boolean
               volumeClaimTemplates:
                 description: 'Optional: volumes etc for the Druid pods'
                 items:
@@ -10889,6 +10904,10 @@ spec:
             description: DruidStatus defines the observed state of Druid
             properties:
               configMaps:
+                items:
+                  type: string
+                type: array
+              daemonsets:
                 items:
                   type: string
                 type: array
