@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
-	networkingv1 "networking.k8s.io/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 
 	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
