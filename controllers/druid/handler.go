@@ -18,7 +18,7 @@ import (
 	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -335,7 +335,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid) error {
 	updatedStatus.PodDisruptionBudgets = deleteUnusedResources(sdk, m, podDisruptionBudgetNames, ls,
 		func() objectList { return makePodDisruptionBudgetListEmptyObj() },
 		func(listObj runtime.Object) []object {
-			items := listObj.(*v1beta1.PodDisruptionBudgetList).Items
+			items := listObj.(*policyv1.PodDisruptionBudgetList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
 				result[i] = &items[i]
@@ -979,18 +979,18 @@ func getVolume(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniq
 }
 
 func getCommand(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
-  if (m.Spec.StartScript != "" && m.Spec.EntryArg != "") {
-      return []string{m.Spec.StartScript}
-  }
-  return []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType}
+	if m.Spec.StartScript != "" && m.Spec.EntryArg != "" {
+		return []string{m.Spec.StartScript}
+	}
+	return []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType}
 }
 
 func getEntryArg(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
-  if (m.Spec.EntryArg != "") {
-      bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", firstNonEmptyStr(m.Spec.DruidScript, "bin/run-druid.sh"), nodeSpec.NodeType}, " ")
-      return []string{"-c", bashCommands}
-  }
-  return nil
+	if m.Spec.EntryArg != "" {
+		bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", firstNonEmptyStr(m.Spec.DruidScript, "bin/run-druid.sh"), nodeSpec.NodeType}, " ")
+		return []string{"-c", bashCommands}
+	}
+	return nil
 }
 
 func getEnv(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, configMapSHA string) []v1.EnvVar {
@@ -1158,7 +1158,7 @@ func makePodTemplate(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 // makePodSpec shall create podSpec common to both deployment and statefulset.
 func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr, configMapSHA string) v1.PodSpec {
 	spec := v1.PodSpec{
-		NodeSelector:              firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
+		NodeSelector:     firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
 		Tolerations:      getTolerations(nodeSpec, m),
 		Affinity:         getAffinity(nodeSpec, m),
 		ImagePullSecrets: firstNonNilValue(nodeSpec.ImagePullSecrets, m.Spec.ImagePullSecrets).([]v1.LocalObjectReference),
@@ -1196,13 +1196,13 @@ func updateDefaultPortInProbe(probe *v1.Probe, defaultPort int32) *v1.Probe {
 	return probe
 }
 
-func makePodDisruptionBudget(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*v1beta1.PodDisruptionBudget, error) {
+func makePodDisruptionBudget(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*policyv1.PodDisruptionBudget, error) {
 	pdbSpec := *nodeSpec.PodDisruptionBudgetSpec
 	pdbSpec.Selector = &metav1.LabelSelector{MatchLabels: ls}
 
-	pdb := &v1beta1.PodDisruptionBudget{
+	pdb := &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "policy/v1beta1",
+			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
 		},
 
@@ -1360,10 +1360,10 @@ func makeDeloymentListEmptyObj() *appsv1.DeploymentList {
 	}
 }
 
-func makePodDisruptionBudgetListEmptyObj() *v1beta1.PodDisruptionBudgetList {
-	return &v1beta1.PodDisruptionBudgetList{
+func makePodDisruptionBudgetListEmptyObj() *policyv1.PodDisruptionBudgetList {
+	return &policyv1.PodDisruptionBudgetList{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "policy/v1beta1",
+			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
 		},
 	}
@@ -1432,10 +1432,10 @@ func makeDeploymentEmptyObj() *appsv1.Deployment {
 	}
 }
 
-func makePodDisruptionBudgetEmptyObj() *v1beta1.PodDisruptionBudget {
-	return &v1beta1.PodDisruptionBudget{
+func makePodDisruptionBudgetEmptyObj() *policyv1.PodDisruptionBudget {
+	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "policy/v1beta1",
+			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
 		},
 	}
