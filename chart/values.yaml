@@ -5,12 +5,13 @@
 env:
   DENY_LIST: "default,kube-system" # Comma-separated list of namespaces to ignore
   RECONCILE_WAIT: "10s"            # Reconciliation delay
-  WATCH_NAMESPACE: ""              # Namespace to watch or empty string to watch all namespaces
+  WATCH_NAMESPACE: ""              # Namespace to watch or empty string to watch all namespaces, To watch multiple namespaces add , into string. Ex: WATCH_NAMESPACE: "ns1,ns2,ns3"
+  #MAX_CONCURRENT_RECONCILES:: ""  # MaxConcurrentReconciles is the maximum number of concurrent Reconciles which can be run.
 
 replicaCount: 1
 
 image:
-  repository: druidio/druid-operator
+  repository: datainfrahq/druid-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -19,45 +20,68 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-rbac:
-  create: true
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
 
 serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
   # Annotations to add to the service account
-  annotations: {}
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "druid-operator-controller-manager"
 
 podAnnotations: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  runAsNonRoot: true
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
 
 nodeSelector: {}
 
 tolerations: []
 
-affinity: {}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+                - ppc64le
+                - s390x
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+
+crd:
+  enabled: true
+  keep: true
