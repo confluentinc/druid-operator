@@ -694,6 +694,10 @@ spec:
                 type: boolean
               disablePVCDeletionFinalizer:
                 type: boolean
+              druidScript:
+                type: string
+              entryArg:
+                type: string
               env:
                 items:
                   properties:

@@ -1504,6 +1504,15 @@ spec:
                 description: Default is set to false, pvc shall be deleted on deletion
                   of CR
                 type: boolean
+              druidScript:
+                description: 'Optional: Customized druid shell script path. If not
+                  set, the default would be "bin/run-druid.sh"'
+                type: string
+              entryArg:
+                description: 'Optional: bash/sh entry arg. Set startScript to `sh`
+                  or `bash` to customize entryArg For example, the container can run
+                  `sh -c "${EntryArg} && ${DruidScript} {nodeType}"`'
+                type: string
               env:
                 description: Environment variables for druid containers
                 items:
@@ -1652,7 +1661,8 @@ spec:
                 type: boolean
               ignored:
                 default: false
-                description: If true, this spec would be ignored by the operator
+                description: 'Ignored is now deprecated API. In order to avoid reconciliation
+                  of objects use the druid.apache.org/ignored: "true" annotation'
                 type: boolean
               image:
                 description: Required here or at nodeSpec level
