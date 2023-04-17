@@ -41,15 +41,15 @@ func verifySpec(m *storageconfluentiov1.LocalStorage) error {
 	errorMsg := ""
 
 	if !keyValidationRegex.MatchString(m.Spec.Name) {
-		errorMsg = fmt.Sprintf("%Name[%s] must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, m.Spec.Name)
+		errorMsg = fmt.Sprintf("%sName[%s] must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, m.Spec.Name)
 	}
 
 	if m.Spec.InstanceType == "" {
-		errorMsg = fmt.Sprint("%sInstanceType missing from LocalStorage Spec\n", errorMsg)
+		errorMsg = fmt.Sprintf("%sInstanceType missing from LocalStorage Spec\n", errorMsg)
 	}
 
 	if m.Spec.Replicas < 0 {
-		errorMsg = fmt.Sprint("%sReplica count less than 0\n", errorMsg)
+		errorMsg = fmt.Sprintf("%sReplica count less than 0\n", errorMsg)
 	}
 
 	if errorMsg == "" {

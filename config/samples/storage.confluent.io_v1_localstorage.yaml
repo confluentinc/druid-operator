@@ -2,5 +2,9 @@ apiVersion: storage.confluent.io.apache.org/v1
 kind: LocalStorage
 metadata:
   name: localstorage-sample
+  namespace: sada-test
 spec:
-  # TODO(user): Add fields here
+  name: test-localstorage
+  replicas: 1
+  instanceType: i3.large
+  forceDeploy: false 
