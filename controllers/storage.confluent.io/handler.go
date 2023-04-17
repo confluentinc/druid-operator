@@ -23,9 +23,9 @@ var logger = logf.Log.WithName("storage_operator_handler")
 
 const (
 	localStorageResourceHash = "localStorageResourceHash"
-	eksNvmeProvisioner       = "eksNvmeProvisioner"
-	localVolumeProvisioner   = "localVolumeProvisioner"
-	nodeGrabber              = "nodeGrabber"
+	eksNvmeProvisioner       = "eks-nvme-provisioner"
+	localVolumeProvisioner   = "local-volume-provisioner"
+	nodeGrabber              = "node-grabber"
 	resourceCreated          = "CREATED"
 	resourceUpdated          = "UPDATED"
 	nodeSelectorLabel        = "beta.kubernetes.io/instance-type"
@@ -77,7 +77,7 @@ func getNodeSelector(m *storageconfluentiov1.LocalStorage) map[string]string {
 
 func addCommonLabels(labels map[string]string, m *storageconfluentiov1.LocalStorage) map[string]string {
 	labels["cr-name"] = m.Name
-	labels["operator-version"] = "storage.confluent.io/v1"
+	labels["operator-version"] = "storage.confluent.io-v1"
 	labels["operator-name"] = "LocalStorage"
 	return labels
 }
@@ -123,7 +123,7 @@ func makeEKSNVMEProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, 
 		},
 		Containers: []v1.Container{
 			{
-				Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0",
+				Image:           m.Spec.EKSImage,
 				ImagePullPolicy: v1.PullAlways,
 				Name:            eksNvmeProvisioner,
 				VolumeMounts: []v1.VolumeMount{
@@ -189,7 +189,7 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 		},
 		Containers: []v1.Container{
 			{
-				Image:           "quay.io/external_storage/local-volume-provisioner:v2.3.3",
+				Image:           m.Spec.LocalVolumeImage,
 				ImagePullPolicy: v1.PullAlways,
 				Name:            localVolumeProvisioner,
 				VolumeMounts: []v1.VolumeMount{
@@ -232,7 +232,7 @@ func makeNodeGrabber(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, map[str
 	podSpec := &v1.PodSpec{
 		NodeSelector: getNodeSelector(m),
 		Containers: []v1.Container{{
-			Image:           "050879227952.dkr.ecr.us-west-2.amazonaws.com/confluentinc/cc-base-alpine:v2.7.0",
+			Image:           m.Spec.NodeGrabberImage,
 			Command:         []string{"tail", "-f", "/dev/null"},
 			ImagePullPolicy: v1.PullAlways,
 			Name:            nodeGrabber,
