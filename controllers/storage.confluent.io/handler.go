@@ -253,6 +253,20 @@ func makeNodeGrabber(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, map[str
 	return podSpec, labels
 }
 
+func makeLocalVolumeProvisionerConfigMap(m *storageconfluentiov1.LocalStorage) (map[string]string, map[string]string) {
+	labels := addOperatorLabels(m, localVolumeProvisioner)
+	data := map[string]string{
+		"setPVOwnerRef": "true",
+		"storageClassMap": `
+		local-storage:
+			hostDir: /pv-disks
+			mountDir: /pv-disks
+		`,
+		"useNodeNameOnly": "true",
+	}
+	return data, labels
+}
+
 func deleteUnusedResources(sdk client.Client, drd *storageconfluentiov1.LocalStorage,
 	names map[string]bool, selectorLabels map[string]string, emptyListObjFn func() objectList, itemsExtractorFn func(obj runtime.Object) []object) []string {
 
@@ -335,7 +349,7 @@ func sdkCreateOrUpdateAsNeeded(
 					return resourceCreated, nil
 				}
 			} else {
-				e := fmt.Errorf("Failed to get [%s:%s] due to [%s].", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
+				e := fmt.Errorf("failed to get [%s:%s] due to [%s]", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
 				logger.Error(e, e.Error(), "Prev object", stringifyForLogging(prevObj, ls), "name", ls.Name, "namespace", ls.Namespace)
 				return "", e
 			}
@@ -453,6 +467,18 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 	}
 	daemonsetNames := make(map[string]bool)
 	deploymentNames := make(map[string]bool)
+	configMapNames := make(map[string]bool)
+
+	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeConfigMap(localVolumeProvisioner, m.Namespace, configMapLabels, configMapData)
+		},
+		func() object { return makeConfigMapEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, configMapNames); err != nil {
+		return err
+	}
 
 	md := m.GetDeletionTimestamp() != nil
 	if md {
