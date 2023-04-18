@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sort"
 
+	"gopkg.in/yaml.v3"
+
 	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -100,7 +102,8 @@ func makeEKSNVMEProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, 
 	mountPropagation := v1.MountPropagationBidirectional
 	_true := true
 	podSpec := &v1.PodSpec{
-		NodeSelector: getNodeSelector(m),
+		NodeSelector:       getNodeSelector(m),
+		ServiceAccountName: m.Spec.ServiceAccountName,
 		Volumes: []v1.Volume{
 			{
 				Name: "pv-disks",
@@ -155,7 +158,8 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 	mountPropagation := v1.MountPropagationHostToContainer
 	_true := true
 	podSpec := &v1.PodSpec{
-		NodeSelector: getNodeSelector(m),
+		NodeSelector:       getNodeSelector(m),
+		ServiceAccountName: m.Spec.ServiceAccountName,
 		Volumes: []v1.Volume{
 			{
 				Name: "local-storage",
@@ -181,7 +185,7 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						DefaultMode: &configMapVolumeMode,
 						LocalObjectReference: v1.LocalObjectReference{
-							Name: "local-provisioner-config",
+							Name: localVolumeProvisioner,
 						},
 					},
 				},
@@ -192,6 +196,26 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 				Image:           m.Spec.LocalVolumeImage,
 				ImagePullPolicy: v1.PullAlways,
 				Name:            localVolumeProvisioner,
+				Env: []v1.EnvVar{
+					{
+						Name: "MY_NODE_NAME",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								APIVersion: "v1",
+								FieldPath:  "spec.nodeName",
+							},
+						},
+					},
+					{
+						Name: "MY_NAMESPACE",
+						ValueFrom: &v1.EnvVarSource{
+							FieldRef: &v1.ObjectFieldSelector{
+								APIVersion: "v1",
+								FieldPath:  "metadata.namespace",
+							},
+						},
+					},
+				},
 				VolumeMounts: []v1.VolumeMount{
 					{
 						MountPath: "/etc/provisioner/config",
@@ -255,13 +279,13 @@ func makeNodeGrabber(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, map[str
 
 func makeLocalVolumeProvisionerConfigMap(m *storageconfluentiov1.LocalStorage) (map[string]string, map[string]string) {
 	labels := addOperatorLabels(m, localVolumeProvisioner)
+	storageClassMap := fmt.Sprintf(`{"%s": {"hostDir": "/pv-disks", "mountDir": "/pv-disks"}}`, m.Spec.StorageClassName)
+	var _data interface{}
+	_ = yaml.Unmarshal([]byte(storageClassMap), &_data)
+	yamlBytes, _ := yaml.Marshal(_data)
 	data := map[string]string{
-		"setPVOwnerRef": "true",
-		"storageClassMap": `
-		local-storage:
-			hostDir: /pv-disks
-			mountDir: /pv-disks
-		`,
+		"setPVOwnerRef":   "true",
+		"storageClassMap": string(yamlBytes),
 		"useNodeNameOnly": "true",
 	}
 	return data, labels
@@ -468,17 +492,7 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 	daemonsetNames := make(map[string]bool)
 	deploymentNames := make(map[string]bool)
 	configMapNames := make(map[string]bool)
-
-	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
-
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeConfigMap(localVolumeProvisioner, m.Namespace, configMapLabels, configMapData)
-		},
-		func() object { return makeConfigMapEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, configMapNames); err != nil {
-		return err
-	}
+	storageClassNames := make(map[string]bool)
 
 	md := m.GetDeletionTimestamp() != nil
 	if md {
@@ -492,6 +506,26 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 				return err
 			}
 		}
+	}
+
+	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeConfigMap(localVolumeProvisioner, m.Namespace, configMapLabels, configMapData)
+		},
+		func() object { return makeConfigMapEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, configMapNames); err != nil {
+		return err
+	}
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeStorageClass(m)
+		},
+		func() object { return makeStorageClassEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, storageClassNames); err != nil {
+		return err
 	}
 
 	eksNvmeProvisionerPodSpec, eksNvmeProvisionerLabels := makeEKSNVMEProvisioner(m)

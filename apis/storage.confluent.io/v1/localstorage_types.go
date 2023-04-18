@@ -17,13 +17,15 @@ type LocalStorageSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of LocalStorage. Edit localstorage_types.go to remove/update
-	Name             string `json:"name"`
-	Replicas         int    `json:"replicas"`
-	InstanceType     string `json:"instanceType"`
-	ForceDeploy      bool   `json:"forceDeploy"`
-	EKSImage         string `json:"eksImage"`
-	NodeGrabberImage string `json:"nodeGrabberImage"`
-	LocalVolumeImage string `json:"localVolumeImage"`
+	Name               string `json:"name"`
+	Replicas           int    `json:"replicas"`
+	InstanceType       string `json:"instanceType"`
+	ForceDeploy        bool   `json:"forceDeploy"`
+	EKSImage           string `json:"eksImage"`
+	NodeGrabberImage   string `json:"nodeGrabberImage"`
+	LocalVolumeImage   string `json:"localVolumeImage"`
+	StorageClassName   string `json:"storageClassName"`
+	ServiceAccountName string `json:"serviceAccountName"`
 }
 
 // LocalStorageStatus defines the observed state of LocalStorage

@@ -4,6 +4,7 @@ import (
 	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -53,6 +54,32 @@ func makeDaemonSet(m *storageconfluentiov1.LocalStorage, p *v1.PodSpec, ls map[s
 		},
 	}
 	return daemonSetSpec, nil
+}
+
+func makeStorageClass(m *storageconfluentiov1.LocalStorage) (*storagev1.StorageClass, error) {
+	volumeBindMode := storagev1.VolumeBindingWaitForFirstConsumer
+	reclaimPolicy := v1.PersistentVolumeReclaimDelete
+	storageClassSpec := &storagev1.StorageClass{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StorageClass",
+			APIVersion: "storage.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: m.Spec.StorageClassName,
+		},
+		Provisioner:       "kubernetes.io/no-provisioner",
+		VolumeBindingMode: &volumeBindMode,
+		ReclaimPolicy:     &reclaimPolicy,
+	}
+	return storageClassSpec, nil
+}
+
+func makeStorageClassEmptyObj() *storagev1.StorageClass {
+	return &storagev1.StorageClass{}
+}
+
+func makeStorageClassListEmptyObj() *storagev1.StorageClassList {
+	return &storagev1.StorageClassList{}
 }
 
 func makeDeployment(m *storageconfluentiov1.LocalStorage, p *v1.PodSpec, ls map[string]string) (*appsv1.Deployment, error) {

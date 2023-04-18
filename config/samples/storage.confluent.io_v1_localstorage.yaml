@@ -11,4 +11,5 @@ spec:
   eksImage: "755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0"
   nodeGrabberImage: "755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-base-alpine:v2.7.0"
   localVolumeImage: "quay.io/external_storage/local-volume-provisioner:v2.3.3"
-
+  serviceAccountName: druid-operator-controller-manager
+  storageClassName: local-storage
