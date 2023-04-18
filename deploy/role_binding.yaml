@@ -5,6 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: druid-operator
+  namespace: sada-test
 roleRef:
   kind: Role
   name: druid-operator

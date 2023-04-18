@@ -1,0 +1,94 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.2
+  creationTimestamp: null
+  name: localstorages.storage.confluent.io.apache.org
+spec:
+  group: storage.confluent.io.apache.org
+  names:
+    kind: LocalStorage
+    listKind: LocalStorageList
+    plural: localstorages
+    singular: localstorage
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: LocalStorage is the Schema for the localstorages API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LocalStorageSpec defines the desired state of LocalStorage
+            properties:
+              eksImage:
+                type: string
+              forceDeploy:
+                type: boolean
+              instanceType:
+                type: string
+              localVolumeImage:
+                type: string
+              name:
+                description: Foo is an example field of LocalStorage. Edit localstorage_types.go
+                  to remove/update
+                type: string
+              nodeGrabberImage:
+                type: string
+              replicas:
+                type: integer
+              serviceAccountName:
+                type: string
+              storageClassName:
+                type: string
+            required:
+            - eksImage
+            - forceDeploy
+            - instanceType
+            - localVolumeImage
+            - name
+            - nodeGrabberImage
+            - replicas
+            - serviceAccountName
+            - storageClassName
+            type: object
+          status:
+            description: LocalStorageStatus defines the observed state of LocalStorage
+            properties:
+              eksNvmeProvisioner:
+                type: string
+              lastUpdated:
+                type: string
+              localVolumeProvisioner:
+                type: string
+              name:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+              nodeGrabber:
+                type: string
+              pods:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

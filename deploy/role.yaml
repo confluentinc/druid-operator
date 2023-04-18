@@ -3,6 +3,7 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: druid-operator
+  namespace: sada-test
 rules:
   - apiGroups:
       - ""
@@ -30,6 +31,7 @@ rules:
     resources:
       - statefulsets
       - deployments
+      - daemonsets
     verbs:
       - list
       - watch
@@ -66,8 +68,10 @@ rules:
       - update
   - apiGroups:
       - druid.apache.org
+      - storage.confluent.io.apache.org
     resources:
       - druids
+      - localstorages
     verbs:
       - get
       - list
@@ -78,8 +82,10 @@ rules:
       - delete
   - apiGroups:
       - druid.apache.org
+      - storage.confluent.io.apache.org
     resources:
       - druids/status
+      - localstorages/status
     verbs:
       - get
       - update
