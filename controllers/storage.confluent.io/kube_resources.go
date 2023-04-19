@@ -143,6 +143,15 @@ func makeDeploymentListEmptyObj() *appsv1.DeploymentList {
 	}
 }
 
+func makePVListEmptyObj() *v1.PersistentVolumeList {
+	return &v1.PersistentVolumeList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolume",
+			APIVersion: "v1",
+		},
+	}
+}
+
 func makeConfigMapEmptyObj() *v1.ConfigMap {
 	return &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{

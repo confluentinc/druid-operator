@@ -285,11 +285,10 @@ func makeLocalVolumeProvisionerConfigMap(m *storageconfluentiov1.LocalStorage) (
 	yamlBytes, _ := yaml.Marshal(_data)
 	jsonStr, _ := json.Marshal(labels)
 	data := map[string]string{
-		"setPVOwnerRef":     "true",
-		"storageClassMap":   string(yamlBytes),
-		"useNodeNameOnly":   "true",
-		"labelsForPV":       string(jsonStr),
-		"useJobForCleaning": "true",
+		"setPVOwnerRef":   "true",
+		"storageClassMap": string(yamlBytes),
+		"useNodeNameOnly": "true",
+		"labelsForPV":     string(jsonStr),
 	}
 	return data, labels
 }
@@ -411,7 +410,7 @@ func listObjects(ctx context.Context, sdk client.Client, drd *storageconfluentio
 	return ListObjFn(listObj), nil
 }
 
-func deleteMarkedResource(sdk client.Client, drd *storageconfluentiov1.LocalStorage, dsList, depList []object) error {
+func deleteMarkedResource(sdk client.Client, drd *storageconfluentiov1.LocalStorage, dsList, depList, pvList []object) error {
 
 	for i := range dsList {
 		if err := sdk.Delete(context.TODO(), dsList[i], &client.DeleteAllOfOptions{}); err != nil {
@@ -420,6 +419,12 @@ func deleteMarkedResource(sdk client.Client, drd *storageconfluentiov1.LocalStor
 	}
 
 	for i := range depList {
+		if err := sdk.Delete(context.TODO(), depList[i], &client.DeleteAllOfOptions{}); err != nil {
+			return err
+		}
+	}
+
+	for i := range pvList {
 		if err := sdk.Delete(context.TODO(), depList[i], &client.DeleteAllOfOptions{}); err != nil {
 			return err
 		}
@@ -456,9 +461,21 @@ func executeFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) 
 			return err
 		}
 
+		pvList, err := listObjects(context.TODO(), sdk, m, storageLabels, func() objectList { return makePVListEmptyObj() }, func(listObj runtime.Object) []object {
+			items := listObj.(*v1.PersistentVolumeList).Items
+			result := make([]object, len(items))
+			for i := 0; i < len(items); i++ {
+				result[i] = &items[i]
+			}
+			return result
+		})
+		if err != nil {
+			return err
+		}
+
 		msg := fmt.Sprintf("Trigerring finalizer for CR [%s] in namespace [%s]", m.Name, m.Namespace)
 		logger.Info(msg)
-		if err := deleteMarkedResource(sdk, m, dsList, depList); err != nil {
+		if err := deleteMarkedResource(sdk, m, dsList, depList, pvList); err != nil {
 			return err
 		} else {
 			msg := fmt.Sprintf("Finalizer success for CR [%s] in namespace [%s]", m.Name, m.Namespace)
