@@ -283,10 +283,12 @@ func makeLocalVolumeProvisionerConfigMap(m *storageconfluentiov1.LocalStorage) (
 	var _data interface{}
 	_ = yaml.Unmarshal([]byte(storageClassMap), &_data)
 	yamlBytes, _ := yaml.Marshal(_data)
+	jsonStr, _ := json.Marshal(labels)
 	data := map[string]string{
 		"setPVOwnerRef":   "true",
 		"storageClassMap": string(yamlBytes),
 		"useNodeNameOnly": "true",
+		"labelsForPV":     string(jsonStr),
 	}
 	return data, labels
 }
