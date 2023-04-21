@@ -425,7 +425,7 @@ func deleteMarkedResource(sdk client.Client, drd *storageconfluentiov1.LocalStor
 	}
 
 	for i := range pvList {
-		if err := sdk.Delete(context.TODO(), depList[i], &client.DeleteAllOfOptions{}); err != nil {
+		if err := sdk.Delete(context.TODO(), pvList[i], &client.DeleteAllOfOptions{}); err != nil {
 			return err
 		}
 	}
@@ -513,6 +513,7 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 	deploymentNames := make(map[string]bool)
 	configMapNames := make(map[string]bool)
 	storageClassNames := make(map[string]bool)
+	pvNames := make(map[string]bool)
 
 	md := m.GetDeletionTimestamp() != nil
 	if md {
@@ -577,6 +578,26 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 		func() object { return makeDeploymentEmptyObj() },
 		deploymentEqualFn, noopUpdaterFn, m, deploymentNames); err != nil {
 		return err
+	}
+	commonLabels := addCommonLabels(map[string]string{}, m)
+	pvList, err := listObjects(context.TODO(), sdk, m, commonLabels, func() objectList { return makePVListEmptyObj() }, func(listObj runtime.Object) []object {
+		items := listObj.(*v1.PersistentVolumeList).Items
+		result := make([]object, len(items))
+		for i := 0; i < len(items); i++ {
+			result[i] = &items[i]
+		}
+		return result
+	})
+	if err != nil {
+		return err
+	}
+	for i := range pvList {
+		if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+			func() (object, error) { return pvList[i], nil },
+			func() object { return makePVEmptyObj() },
+			genericEqualFn, noopUpdaterFn, m, pvNames); err != nil {
+			return err
+		}
 	}
 
 	updatedStatus := storageconfluentiov1.LocalStorageStatus{}
