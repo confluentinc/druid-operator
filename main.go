@@ -14,7 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	druidv1alpha1 "github.com/druid-io/druid-operator/apis/druid/v1alpha1"
+	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
 	"github.com/druid-io/druid-operator/controllers/druid"
+	storageconfluentiocontroller "github.com/druid-io/druid-operator/controllers/storage.confluent.io"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -28,6 +30,8 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = druidv1alpha1.AddToScheme(scheme)
+
+	_ = storageconfluentiov1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -66,6 +70,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&storageconfluentiocontroller.LocalStorageReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("LocalStorage"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LocalStorage")
+		os.Exit(1)
+	}
+	/*
+		if err = (&storageconfluentiov1.LocalStorage{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "LocalStorage")
+			os.Exit(1)
+		}
+	*/
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

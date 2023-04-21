@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: druid-operator
+  namespace: sada-test
 spec:
   replicas: 1
   selector:
@@ -16,7 +17,7 @@ spec:
       containers:
         - name: druid-operator
           # Replace this with the built image name
-          image: druidio/druid-operator:latest
+          image: 755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-test-sada-druid-operator:ls-0.3 
           command:
           - /manager
           imagePullPolicy: IfNotPresent
