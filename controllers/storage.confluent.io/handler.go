@@ -410,6 +410,20 @@ func listObjects(ctx context.Context, sdk client.Client, drd *storageconfluentio
 	return ListObjFn(listObj), nil
 }
 
+func listObjectsWithoutNamespace(ctx context.Context, sdk client.Client, drd *storageconfluentiov1.LocalStorage, selectorLabels map[string]string, emptyListObjFn func() objectList, ListObjFn func(obj runtime.Object) []object) ([]object, error) {
+
+	listOpts := []client.ListOption{
+		client.MatchingLabels(selectorLabels),
+	}
+	listObj := emptyListObjFn()
+
+	if err := sdk.List(ctx, listObj, listOpts...); err != nil {
+		return nil, err
+	}
+
+	return ListObjFn(listObj), nil
+}
+
 func deleteMarkedResource(sdk client.Client, drd *storageconfluentiov1.LocalStorage, dsList, depList, pvList []object) error {
 
 	for i := range dsList {
@@ -461,7 +475,7 @@ func executeFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) 
 			return err
 		}
 
-		pvList, err := listObjects(context.TODO(), sdk, m, storageLabels, func() objectList { return makePVListEmptyObj() }, func(listObj runtime.Object) []object {
+		pvList, err := listObjectsWithoutNamespace(context.TODO(), sdk, m, storageLabels, func() objectList { return makePVListEmptyObj() }, func(listObj runtime.Object) []object {
 			items := listObj.(*v1.PersistentVolumeList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {

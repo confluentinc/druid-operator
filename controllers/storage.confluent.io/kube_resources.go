@@ -161,6 +161,19 @@ func makePVEmptyObj() *v1.PersistentVolume {
 	}
 }
 
+func makeSCListEmptyObj() *storagev1.StorageClassList {
+	return &storagev1.StorageClassList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "StorageClass",
+			APIVersion: "storage.k8s.io/v1",
+		},
+	}
+}
+
+func makeSCEmptyObj() *storagev1.StorageClass {
+	return &storagev1.StorageClass{}
+}
+
 func makeConfigMapEmptyObj() *v1.ConfigMap {
 	return &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
