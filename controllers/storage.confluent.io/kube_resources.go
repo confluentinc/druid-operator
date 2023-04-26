@@ -17,15 +17,15 @@ func makeLocalStorageEmptyObj() *storageconfluentiov1.LocalStorage {
 	}
 }
 
-func makeConfigMap(name string, namespace string, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
+func makeConfigMap(m *storageconfluentiov1.LocalStorage, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
 	return &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      makeNodeSpecificUniqueString(m, labels["name"]),
+			Namespace: m.Namespace,
 			Labels:    labels,
 		},
 		Data: data,
@@ -34,7 +34,7 @@ func makeConfigMap(name string, namespace string, labels map[string]string, data
 func makeDaemonSet(m *storageconfluentiov1.LocalStorage, p *v1.PodSpec, ls map[string]string) (*appsv1.DaemonSet, error) {
 	daemonSetSpec := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Daemonset",
+			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{

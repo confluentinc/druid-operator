@@ -516,6 +516,14 @@ func checkIfCRExists(sdk client.Client, m *storageconfluentiov1.LocalStorage) bo
 	}
 }
 
+func getNamesFromMap(obj map[string]bool) []string {
+	var names []string
+	for p, _ := range obj {
+		names = append(names, p)
+	}
+	return names
+}
+
 func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) error {
 	err := verifySpec(m)
 	if err != nil {
@@ -547,7 +555,7 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 
 	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
 		func() (object, error) {
-			return makeConfigMap(localVolumeProvisioner, m.Namespace, configMapLabels, configMapData)
+			return makeConfigMap(m, configMapLabels, configMapData)
 		},
 		func() object { return makeConfigMapEmptyObj() },
 		genericEqualFn, noopUpdaterFn, m, configMapNames); err != nil {
@@ -632,6 +640,27 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 
 	updatedStatus.Pods = getPodNames(podList)
 	sort.Strings(updatedStatus.Pods)
+
+	configMapNamesList := getNamesFromMap(configMapNames)
+	daemonSetNamesList := getNamesFromMap(daemonsetNames)
+	deploymentNamesList := getNamesFromMap(deploymentNames)
+	pvNamesList := getNamesFromMap(pvNames)
+	storageClassNamesList := getNamesFromMap(storageClassNames)
+
+	updatedStatus.ConfigMaps = configMapNamesList
+	sort.Strings(updatedStatus.ConfigMaps)
+
+	updatedStatus.DaemonSets = daemonSetNamesList
+	sort.Strings(updatedStatus.DaemonSets)
+
+	updatedStatus.Deployments = deploymentNamesList
+	sort.Strings(updatedStatus.Deployments)
+
+	updatedStatus.PersistentVolumes = pvNamesList
+	sort.Strings(updatedStatus.PersistentVolumes)
+
+	updatedStatus.StorageClasses = storageClassNamesList
+	sort.Strings(updatedStatus.StorageClasses)
 
 	err = statusPatcher(sdk, updatedStatus, m)
 	if err != nil {

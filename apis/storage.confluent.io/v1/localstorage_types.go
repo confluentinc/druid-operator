@@ -38,6 +38,11 @@ type LocalStorageStatus struct {
 	LocalVolumeProvisioner string   `json:"localVolumeProvisioner,omitempty"`
 	EKSNVMEProvisioner     string   `json:"eksNvmeProvisioner,omitempty"`
 	Pods                   []string `json:"pods,omitempty"`
+	ConfigMaps             []string `json:"configMaps,omitempty"`
+	PersistentVolumes      []string `json:"persistentVolumes,omitempty"`
+	StorageClasses         []string `json:"storageClass,omitempty"`
+	Deployments            []string `json:"deployments,omitempty"`
+	DaemonSets             []string `json:"daemonSets,omitempty"`
 }
 
 //+kubebuilder:object:root=true

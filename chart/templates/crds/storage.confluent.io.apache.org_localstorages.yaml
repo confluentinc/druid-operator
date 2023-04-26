@@ -69,6 +69,18 @@ spec:
           status:
             description: LocalStorageStatus defines the observed state of LocalStorage
             properties:
+              configMaps:
+                items:
+                  type: string
+                type: array
+              daemonSets:
+                items:
+                  type: string
+                type: array
+              deployments:
+                items:
+                  type: string
+                type: array
               eksNvmeProvisioner:
                 type: string
               lastUpdated:
@@ -82,7 +94,15 @@ spec:
                 type: string
               nodeGrabber:
                 type: string
+              persistentVolumes:
+                items:
+                  type: string
+                type: array
               pods:
+                items:
+                  type: string
+                type: array
+              storageClass:
                 items:
                   type: string
                 type: array

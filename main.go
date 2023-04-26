@@ -70,11 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&storageconfluentiocontroller.LocalStorageReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("LocalStorage"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = storageconfluentiocontroller.NewLocalStorageReconciler(mgr).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LocalStorage")
 		os.Exit(1)
 	}

@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -24,6 +25,15 @@ type LocalStorageReconciler struct {
 	Log           logr.Logger
 	Scheme        *runtime.Scheme
 	ReconcileWait time.Duration
+}
+
+func NewLocalStorageReconciler(mgr ctrl.Manager) *LocalStorageReconciler {
+	return &LocalStorageReconciler{
+		Client:        mgr.GetClient(),
+		Log:           ctrl.Log.WithName("controllers").WithName("LocalStorage"),
+		Scheme:        mgr.GetScheme(),
+		ReconcileWait: LookupReconcileTime(),
+	}
 }
 
 //+kubebuilder:rbac:groups=storage.confluent.io.apache.org,resources=localstorages,verbs=get;list;watch;create;update;patch;delete
@@ -72,4 +82,19 @@ func (r *LocalStorageReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&storageconfluentiov1.LocalStorage{}).
 		Complete(r)
+}
+
+func LookupReconcileTime() time.Duration {
+	val, exists := os.LookupEnv("RECONCILE_WAIT")
+	if !exists {
+		return time.Second * 10
+	} else {
+		v, err := time.ParseDuration(val)
+		if err != nil {
+			logger.Error(err, err.Error())
+			// Exit Program if not valid
+			os.Exit(1)
+		}
+		return v
+	}
 }
