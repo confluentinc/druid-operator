@@ -12,14 +12,11 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -31,9 +28,11 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
+/*
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+*/
 
 type TestK8sEnvCtx struct {
 	restConfig *rest.Config
@@ -51,7 +50,6 @@ func setupK8Evn(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 
 	config, err := testK8sCtx.env.Start()
 	require.NoError(t, err)
-
 	testK8sCtx.restConfig = config
 }
 
@@ -69,7 +67,9 @@ func TestAPIs(t *testing.T) {
 	require.NoError(t, err)
 
 	testK8sCtx.k8sManager, err = ctrl.NewManager(testK8sCtx.restConfig, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: "0",
+		Namespace:          "sada-test",
 	})
 	require.NoError(t, err)
 
@@ -99,10 +99,13 @@ func setupLocalStorageOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 
 func testLocalStorageOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 	lsCR := readLSSpecFromFile(t, "testdata/localstorage-smoke-test-cluster.yaml")
-
+	namespaceSpec := readNamespaceSpecFromFile(t, "testdata/test-namespace.yaml")
 	k8sClient := testK8sCtx.k8sManager.GetClient()
 
-	err := k8sClient.Create(context.TODO(), lsCR)
+	err := k8sClient.Create(context.TODO(), namespaceSpec)
+	require.NoError(t, err)
+
+	err = k8sClient.Create(context.TODO(), lsCR)
 	require.NoError(t, err)
 
 	err = retry(func() error {
@@ -121,11 +124,11 @@ func testLocalStorageOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 		}
 
 		expectedDaemonSets := []string{
-			fmt.Sprintf("local-storage-%s-%s", localVolumeProvisioner, lsCR.Name),
 			fmt.Sprintf("local-storage-%s-%s", eksNvmeProvisioner, lsCR.Name),
+			fmt.Sprintf("local-storage-%s-%s", localVolumeProvisioner, lsCR.Name),
 		}
 		if !areStringArraysEqual(ls.Status.DaemonSets, expectedDaemonSets) {
-			return errors.New(fmt.Sprintf("Failed to get expected StatefulSets, got [%v]", ls.Status.DaemonSets))
+			return errors.New(fmt.Sprintf("Failed to get expected DaemonSets, got [%v]", ls.Status.DaemonSets))
 		}
 
 		expectedDeployments := []string{
@@ -203,10 +206,11 @@ var _ = BeforeSuite(func(done Done) {
 
 	close(done)
 }, 60)
-*/
+
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
+*/

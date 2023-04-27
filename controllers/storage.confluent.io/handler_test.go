@@ -10,6 +10,7 @@ import (
 	"github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func setEmptyResource(obj interface{}) interface{} {
@@ -92,6 +93,20 @@ func TestMakeConfigMap(t *testing.T) {
 
 func readSampleLSSpec(t *testing.T) *storageconfluentiov1.LocalStorage {
 	return readLSSpecFromFile(t, "testdata/localstorage-smoke-test-cluster.yaml")
+}
+
+func readNamespaceSpecFromFile(t *testing.T, filePath string) *v1.Namespace {
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		t.Errorf("Failed to read spec")
+	}
+	spec := new(v1.Namespace)
+	err = yaml.Unmarshal(bytes, &spec)
+	if err != nil {
+		t.Errorf("Failed to unmarshall spec: %v", err)
+	}
+
+	return spec
 }
 
 func readLSSpecFromFile(t *testing.T, filePath string) *storageconfluentiov1.LocalStorage {
