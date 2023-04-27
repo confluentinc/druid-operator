@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    localStorageResourceHash: 3Z19QlgvjdKOFP/QPIDoBsx3l7E=
+  creationTimestamp: null
+  name: local-storage-node-grabber-localstorage-sample
+  namespace: sada-test
+spec:
+  selector:
+    matchLabels:
+      cr-name: localstorage-sample
+      name: node-grabber
+      operator-name: LocalStorage
+      operator-version: storage.confluent.io-v1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        cr-name: localstorage-sample
+        name: node-grabber
+        operator-name: LocalStorage
+        operator-version: storage.confluent.io-v1
+    spec:
+      containers:
+      - command:
+        - tail
+        - -f
+        - /dev/null
+        image: 755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-base-alpine:v2.7.0
+        imagePullPolicy: Always
+        name: node-grabber
+        ports:
+        - containerPort: 28140
+          hostPort: 28140
+          name: hello
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "0.005"
+            memory: "50Mi"
+      nodeSelector:
+        beta.kubernetes.io/instance-type: i3.large
+status: {}
