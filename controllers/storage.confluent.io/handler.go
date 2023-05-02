@@ -185,7 +185,7 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						DefaultMode: &configMapVolumeMode,
 						LocalObjectReference: v1.LocalObjectReference{
-							Name: localVolumeProvisioner,
+							Name: makeNodeSpecificUniqueString(m, labels["name"]),
 						},
 					},
 				},
