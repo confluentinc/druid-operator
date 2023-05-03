@@ -4,7 +4,6 @@ metadata:
   name: localstorage-sample
   namespace: sada-test
 spec:
-  name: test-localstorage
   replicas: 1
   instanceType: i3.large
   forceDeploy: false 

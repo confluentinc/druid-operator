@@ -32,7 +32,6 @@ type LocalStorageSpec struct {
 type LocalStorageStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name                   string   `json:"name,omitempty"`
 	LastUpdated            string   `json:"lastUpdated,omitempty"`
 	NodeGrabber            string   `json:"nodeGrabber,omitempty"`
 	LocalVolumeProvisioner string   `json:"localVolumeProvisioner,omitempty"`
