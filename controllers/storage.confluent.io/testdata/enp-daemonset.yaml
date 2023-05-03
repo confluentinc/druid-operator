@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    localStorageResourceHash: BxPBjGD97SwQq85RtDAxw00jrJg=
+  creationTimestamp: null
+  name: local-storage-eks-nvme-provisioner-localstorage-sample
+  namespace: sada-test
+spec:
+  selector:
+    matchLabels:
+      cr-name: localstorage-sample
+      name: eks-nvme-provisioner
+      operator-name: LocalStorage
+      operator-version: storage.confluent.io-v1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        cr-name: localstorage-sample
+        name: eks-nvme-provisioner
+        operator-name: LocalStorage
+        operator-version: storage.confluent.io-v1
+    spec:
+      containers:
+      - image: 755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0
+        imagePullPolicy: Always
+        name: eks-nvme-provisioner
+        resources: {}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /pv-disks
+          mountPropagation: Bidirectional
+          name: pv-disks
+        - mountPath: /nvme
+          mountPropagation: Bidirectional
+          name: nvme
+      nodeSelector:
+        beta.kubernetes.io/instance-type: i3.large
+      serviceAccountName: druid-operator
+      volumes:
+      - hostPath:
+          path: /pv-disks
+          type: ""
+        name: pv-disks
+      - hostPath:
+          path: /nvme
+          type: ""
+        name: nvme
+  updateStrategy: {}
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0
