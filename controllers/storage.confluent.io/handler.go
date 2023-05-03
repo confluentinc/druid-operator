@@ -42,8 +42,8 @@ func verifySpec(m *storageconfluentiov1.LocalStorage) error {
 
 	errorMsg := ""
 
-	if !keyValidationRegex.MatchString(m.Spec.Name) {
-		errorMsg = fmt.Sprintf("%sName[%s] must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, m.Spec.Name)
+	if !keyValidationRegex.MatchString(m.Name) {
+		errorMsg = fmt.Sprintf("%sName[%s] must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, m.Name)
 	}
 
 	if m.Spec.InstanceType == "" {

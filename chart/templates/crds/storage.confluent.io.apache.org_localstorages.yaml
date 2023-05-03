@@ -43,13 +43,11 @@ spec:
                 type: string
               localVolumeImage:
                 type: string
-              name:
-                description: Foo is an example field of LocalStorage. Edit localstorage_types.go
-                  to remove/update
-                type: string
               nodeGrabberImage:
                 type: string
               replicas:
+                description: Foo is an example field of LocalStorage. Edit localstorage_types.go
+                  to remove/update
                 type: integer
               serviceAccountName:
                 type: string
@@ -60,7 +58,6 @@ spec:
             - forceDeploy
             - instanceType
             - localVolumeImage
-            - name
             - nodeGrabberImage
             - replicas
             - serviceAccountName

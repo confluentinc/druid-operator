@@ -17,7 +17,6 @@ type LocalStorageSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of LocalStorage. Edit localstorage_types.go to remove/update
-	Name               string `json:"name"`
 	Replicas           int    `json:"replicas"`
 	InstanceType       string `json:"instanceType"`
 	ForceDeploy        bool   `json:"forceDeploy"`
