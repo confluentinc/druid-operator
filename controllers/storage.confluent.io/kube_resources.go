@@ -83,6 +83,7 @@ func makeStorageClassListEmptyObj() *storagev1.StorageClassList {
 }
 
 func makeDeployment(m *storageconfluentiov1.LocalStorage, p *v1.PodSpec, ls map[string]string) (*appsv1.Deployment, error) {
+	replicas := int32(m.Spec.Replicas)
 	deploymentSpec := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -96,6 +97,7 @@ func makeDeployment(m *storageconfluentiov1.LocalStorage, p *v1.PodSpec, ls map[
 			Selector: &metav1.LabelSelector{
 				MatchLabels: ls,
 			},
+			Replicas: &replicas,
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: ls,
