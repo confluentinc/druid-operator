@@ -2,11 +2,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: local-storage-provisioner-pv-binding
-  namespace: sada-test 
+  namespace: default 
 subjects:
 - kind: ServiceAccount
   name: druid-operator 
-  namespace: sada-test 
+  namespace: default 
 roleRef:
   kind: ClusterRole
   name: system:persistent-volume-provisioner
@@ -35,11 +35,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: local-storage-provisioner-node-binding
-  namespace: sada-test
+  namespace: default
 subjects:
 - kind: ServiceAccount
   name: druid-operator 
-  namespace: sada-test
+  namespace: default
 roleRef:
   kind: ClusterRole
   name: local-storage-provisioner-node-clusterrole

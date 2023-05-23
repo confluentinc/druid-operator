@@ -3,7 +3,7 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: druid-operator
-  namespace: sada-test
+  namespace: default
 rules:
   - apiGroups:
       - ""
