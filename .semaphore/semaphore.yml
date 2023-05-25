@@ -5,17 +5,43 @@ agent:
     type: s1-prod-ubuntu20-04-amd64-1
 
 blocks:
-  - name: Build, Test
+  - name: Build, Test, Release
     task:
+      run:
+        when: "change_in('/')"
+      secrets:
+        - name: vault_sem2_approle
       prologue:
         commands:
           - sem-version go 1.19
           - checkout
+          - make install-vault
+          - . mk-include/bin/vault-setup
+          - . vault-sem-get-secret gitconfig
+          - . vault-sem-get-secret ssh_id_rsa
+          - . vault-sem-get-secret ssh_config
+          - . vault-sem-get-secret netrc
+          - . vault-sem-get-secret artifactory-docker-helm
+          - . vault-sem-get-secret maven-settings
+          - . vault-sem-get-secret eng_aws
+          - . vault-sem-get-secret cpd_gcloud
+          - . vault-sem-get-secret python-pipenv-codeartifact
+          - . vault-sem-get-secret aws_credentials
+          - . vault-sem-get-secret sox-semaphore-build-info
+          - . vault-sem-get-secret dockerhub-semaphore-cred-ro
+          - chmod 400 ~/.ssh/id_rsa
+          - pip install pyyaml==5.4.1
       jobs:
-        - name: Build, Test
+        - name: Build, Test, Release
           commands:
             - make build
             - make test
             - make helm-lint
             - make helm-template
+            - make helm-package
             - make docker-build
+            - make release-ci
+      epilogue:
+        always:
+          commands:
+            - make epilogue-ci
