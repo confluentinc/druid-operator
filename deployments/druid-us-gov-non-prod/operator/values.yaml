@@ -1,0 +1,10 @@
+env:
+  DENY_LIST: "default,kube-system"       # Comma-separated list of namespaces to ignore
+  RECONCILE_WAIT: "10s"                  # Reconciliation delay
+  WATCH_NAMESPACE: druid-us-gov-non-prod # Namespace to watch or empty string to watch all namespaces
+
+replicaCount: 1
+
+image:
+  repository: "088004002484.dkr.ecr.us-gov-west-1.amazonaws.com/confluentinc/druid-operator"
+  pullPolicy: Always
