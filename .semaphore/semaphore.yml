@@ -34,6 +34,7 @@ blocks:
       jobs:
         - name: Build, Test, Release
           commands:
+            - git fetch --all
             - make build
             - make test
             - make helm-lint
