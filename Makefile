@@ -1,3 +1,9 @@
+SERVICE_NAME := druid-operator
+IMAGE_NAME := $(SERVICE_NAME)
+CHART_NAME := $(SERVICE_NAME)
+MODULE_NAME := $(SERVICE_NAME)
+
+
 # IMG TAG
 IMG_TAG ?= "latest"
 TEST_IMG_TAG ?= "test"
@@ -28,6 +34,32 @@ endif
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
+
+# EPILOGUE_TARGETS cannot be empty, it causes the build to stall.
+EPILOGUE_TARGETS += show-args
+
+HELM_VERSION := v3.10.3
+HELMFILE_VERSION := v0.144.0
+HELMDIFF_VERSION := 3.6.0
+
+# Uses helm-push-artifactory-plugin instead of CPD for pushing helm charts
+HELM_PUSH_TARGET := helm-push-via-plugin
+RELEASE_TARGETS += helm-release-operator
+
+include ./mk-include/cc-begin.mk
+include ./mk-include/cc-semver.mk
+include ./mk-include/cc-docker.mk
+include ./mk-include/cc-helm.mk
+include ./mk-include/cc-helmfile.mk
+include ./mk-include/cc-cpd.mk
+include ./mk-include/cc-vault.mk
+include ./mk-include/cc-end.mk
+
+ifeq ($(DEPLOY_ONLY),true)
+	INIT_CI_TARGETS := helm-setup-ci helmfile-install-ci helmdiff-install-ci helm-registry-login
+endif
+
+
 
 .PHONY: all
 all: build test lint template docker-build
@@ -286,3 +318,5 @@ helm-minio-install:
 deploy-testjob:
 	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
 
+helm-release-operator: 
+	$(MAKE) helm-release CHART_NAME=druid-operator
