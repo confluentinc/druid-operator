@@ -6,9 +6,9 @@ agent:
 
 blocks:
   - name: Build, Test, Release
+    run:
+      when: "change_in('/')"
     task:
-      run:
-        when: "change_in('/')"
       secrets:
         - name: vault_sem2_approle
       prologue:
