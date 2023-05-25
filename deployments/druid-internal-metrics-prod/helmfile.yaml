@@ -1,0 +1,26 @@
+# Use [a-z] for creating names to ensure that the naming requirements for all these resources are met.
+# Postgres frowns on "-" in db names, dns names cannot contain "_" and case is meaningless for DB names and DNS names
+{{- $druidClusterId := "internal-metrics-prod"}}
+
+helmDefaults:
+  kubeContext: k8saas-k8s-7hxx2
+
+hooks:
+- events: [ "presync" ]
+  showlogs: true
+  command: vault
+  args: [ "login", "-address=https://vault.cireops.gcp.internal.confluent.cloud", "-method=oidc", "-path=okta"]
+
+releases:
+
+- name: druid-operator
+  namespace: druid-{{ $druidClusterId }}
+  chart: ../../charts/druid-operator
+  installed: true
+  values:
+    - ./operator/values.yaml
+  set:
+    - name: clusterId
+      value: {{ $druidClusterId }}
+    - name: image.tag
+      value: v1.737.0
