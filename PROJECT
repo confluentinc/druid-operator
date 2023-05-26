@@ -18,4 +18,8 @@ resources:
   kind: Druid
   path: github.com/datainfrahq/druid-operator/apis/druid/v1alpha1
   version: v1alpha1
-version: "3"
+- group: storage.confluent.io
+  kind: LocalStorage
+  version: v1
+version: "2"
+

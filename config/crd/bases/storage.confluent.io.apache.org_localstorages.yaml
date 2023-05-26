@@ -1,0 +1,95 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.2
+  creationTimestamp: null
+  name: localstorages.storage.confluent.io.apache.org
+spec:
+  group: storage.confluent.io.apache.org
+  names:
+    kind: LocalStorage
+    listKind: LocalStorageList
+    plural: localstorages
+    singular: localstorage
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              eksImage:
+                type: string
+              forceDeploy:
+                type: boolean
+              instanceType:
+                type: string
+              localVolumeImage:
+                type: string
+              nodeGrabberImage:
+                type: string
+              replicas:
+                type: integer
+              serviceAccountName:
+                type: string
+              storageClassName:
+                type: string
+            required:
+            - eksImage
+            - forceDeploy
+            - instanceType
+            - localVolumeImage
+            - nodeGrabberImage
+            - replicas
+            - serviceAccountName
+            - storageClassName
+            type: object
+          status:
+            properties:
+              configMaps:
+                items:
+                  type: string
+                type: array
+              daemonSets:
+                items:
+                  type: string
+                type: array
+              deployments:
+                items:
+                  type: string
+                type: array
+              eksNvmeProvisioner:
+                type: string
+              lastUpdated:
+                type: string
+              localVolumeProvisioner:
+                type: string
+              nodeGrabber:
+                type: string
+              persistentVolumes:
+                items:
+                  type: string
+                type: array
+              pods:
+                items:
+                  type: string
+                type: array
+              storageClass:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

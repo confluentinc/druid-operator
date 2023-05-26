@@ -1,0 +1,24 @@
+# permissions for end users to edit localstorages.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: localstorage-editor-role
+rules:
+- apiGroups:
+  - storage.confluent.io.apache.org
+  resources:
+  - localstorages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.confluent.io.apache.org
+  resources:
+  - localstorages/status
+  verbs:
+  - get
