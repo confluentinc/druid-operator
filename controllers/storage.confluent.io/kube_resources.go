@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
+	storageconfluentiov1 "github.com/datainfrahq/druid-operator/apis/storage.confluent.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"

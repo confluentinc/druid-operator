@@ -16,7 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
+	storageconfluentiov1 "github.com/datainfrahq/druid-operator/apis/storage.confluent.io/v1"
 )
 
 // LocalStorageReconciler reconciles a LocalStorage object

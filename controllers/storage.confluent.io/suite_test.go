@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	storageconfluentiov1 "github.com/druid-io/druid-operator/apis/storage.confluent.io/v1"
+	storageconfluentiov1 "github.com/datainfrahq/druid-operator/apis/storage.confluent.io/v1"
 	//+kubebuilder:scaffold:imports
 )
 
