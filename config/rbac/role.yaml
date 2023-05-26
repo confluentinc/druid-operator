@@ -144,6 +144,26 @@ rules:
   - update
   - watch
 - apiGroups:
+  - storage.confluent.io.apache.org
+  resources:
+  - localstorages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.confluent.io.apache.org
+  resources:
+  - localstorages/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses
