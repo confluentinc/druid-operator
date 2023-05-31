@@ -35,29 +35,27 @@ spec:
           spec:
             description: LocalStorageSpec defines the desired state of LocalStorage
             properties:
-              eksImage:
+              eksNVMEProvisionerImage:
                 type: string
               forceDeploy:
                 type: boolean
               instanceType:
                 type: string
-              localVolumeImage:
+              localVolumeProvisionerImage:
                 type: string
               nodeGrabberImage:
                 type: string
               replicas:
-                description: Foo is an example field of LocalStorage. Edit localstorage_types.go
-                  to remove/update
                 type: integer
               serviceAccountName:
                 type: string
               storageClassName:
                 type: string
             required:
-            - eksImage
+            - eksNVMEProvisionerImage
             - forceDeploy
             - instanceType
-            - localVolumeImage
+            - localVolumeProvisionerImage
             - nodeGrabberImage
             - replicas
             - serviceAccountName

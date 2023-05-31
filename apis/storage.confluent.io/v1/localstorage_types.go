@@ -16,15 +16,14 @@ type LocalStorageSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of LocalStorage. Edit localstorage_types.go to remove/update
-	Replicas           int    `json:"replicas"`
-	InstanceType       string `json:"instanceType"`
-	ForceDeploy        bool   `json:"forceDeploy"`
-	EKSImage           string `json:"eksImage"`
-	NodeGrabberImage   string `json:"nodeGrabberImage"`
-	LocalVolumeImage   string `json:"localVolumeImage"`
-	StorageClassName   string `json:"storageClassName"`
-	ServiceAccountName string `json:"serviceAccountName"`
+	Replicas                    int    `json:"replicas"`
+	InstanceType                string `json:"instanceType"`
+	ForceDeploy                 bool   `json:"forceDeploy"`
+	EKSNVMEProvisionerImage     string `json:"eksNVMEProvisionerImage"`
+	NodeGrabberImage            string `json:"nodeGrabberImage"`
+	LocalVolumeProvisionerImage string `json:"localVolumeProvisionerImage"`
+	StorageClassName            string `json:"storageClassName"`
+	ServiceAccountName          string `json:"serviceAccountName"`
 }
 
 // LocalStorageStatus defines the observed state of LocalStorage

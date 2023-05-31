@@ -27,27 +27,35 @@ spec:
             type: object
           spec:
             properties:
-              eksImage:
+              # Image of the DaemonSet EKS NVME Provisioner
+              eksNVMEProvisionerImage:
                 type: string
+              # Deploy the CR forcefully
               forceDeploy:
                 type: boolean
+              # AWS EC2 Instance Type
               instanceType:
                 type: string
-              localVolumeImage:
+              # Image of the DaemonSet Static Local Volume Provisioner
+              localVolumeProvisionerImage:
                 type: string
+               # Image of the Deployment Node Grabber, just to run a no-op
               nodeGrabberImage:
                 type: string
+              # Number of replicas of the `instanceType`
               replicas:
                 type: integer
+              # Name of the Service Account to be used by the resources of this CR
               serviceAccountName:
                 type: string
+              # Name of the Storage Class to be created to use with this CR
               storageClassName:
                 type: string
             required:
-            - eksImage
+            - eksNVMEProvisionerImage
             - forceDeploy
             - instanceType
-            - localVolumeImage
+            - localVolumeProvisionerImage
             - nodeGrabberImage
             - replicas
             - serviceAccountName

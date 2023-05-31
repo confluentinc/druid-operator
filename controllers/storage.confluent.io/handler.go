@@ -126,7 +126,7 @@ func makeEKSNVMEProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSpec, 
 		},
 		Containers: []v1.Container{
 			{
-				Image:           m.Spec.EKSImage,
+				Image:           m.Spec.EKSNVMEProvisionerImage,
 				ImagePullPolicy: v1.PullAlways,
 				Name:            eksNvmeProvisioner,
 				VolumeMounts: []v1.VolumeMount{
@@ -193,7 +193,7 @@ func makeLocalVolumeProvisioner(m *storageconfluentiov1.LocalStorage) (*v1.PodSp
 		},
 		Containers: []v1.Container{
 			{
-				Image:           m.Spec.LocalVolumeImage,
+				Image:           m.Spec.LocalVolumeProvisionerImage,
 				ImagePullPolicy: v1.PullAlways,
 				Name:            localVolumeProvisioner,
 				Env: []v1.EnvVar{
