@@ -32,6 +32,8 @@ const (
 	resourceUpdated          = "UPDATED"
 	nodeSelectorLabel        = "beta.kubernetes.io/instance-type"
 	finalizerName            = "finalizers.confluent.io"
+	storageConfluentV1       = "storage.confluent.io-v1"
+	operatorName             = "LocalStorage"
 )
 
 func verifySpec(m *storageconfluentiov1.LocalStorage) error {
@@ -79,8 +81,8 @@ func getNodeSelector(m *storageconfluentiov1.LocalStorage) map[string]string {
 
 func addCommonLabels(labels map[string]string, m *storageconfluentiov1.LocalStorage) map[string]string {
 	labels["cr-name"] = m.Name
-	labels["operator-version"] = "storage.confluent.io-v1"
-	labels["operator-name"] = "LocalStorage"
+	labels["operator-version"] = storageConfluentV1
+	labels["operator-name"] = operatorName
 	return labels
 }
 
@@ -517,11 +519,135 @@ func checkIfCRExists(sdk client.Client, m *storageconfluentiov1.LocalStorage) bo
 }
 
 func getNamesFromMap(obj map[string]bool) []string {
-	var names []string
-	for p, _ := range obj {
-		names = append(names, p)
+	names := make([]string, len(obj))
+	i := 0
+	for p := range obj {
+		names[i] = p
+		i++
 	}
 	return names
+}
+
+func checkFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) error {
+	md := m.GetDeletionTimestamp() != nil
+	if md {
+		return executeFinalizers(sdk, m)
+	}
+	cr := checkIfCRExists(sdk, m)
+	if cr {
+		if !ContainsString(m.ObjectMeta.Finalizers, finalizerName) {
+			m.SetFinalizers(append(m.GetFinalizers(), finalizerName))
+			if err := sdk.Update(context.TODO(), m); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func deployInit(sdk client.Client, m *storageconfluentiov1.LocalStorage, configMapNames, storageClassNames *map[string]bool) error {
+	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeConfigMap(m, configMapLabels, configMapData)
+		},
+		func() object { return makeConfigMapEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, *configMapNames); err != nil {
+		return err
+	}
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeStorageClass(m)
+		},
+		func() object { return makeStorageClassEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, *storageClassNames); err != nil {
+		return err
+	}
+	return nil
+}
+
+func deployMain(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemonsetNames, deploymentNames *map[string]bool) error {
+	eksNvmeProvisionerPodSpec, eksNvmeProvisionerLabels := makeEKSNVMEProvisioner(m)
+	localVolumeProvisionerPodSpec, localVolumeProvisionerLabels := makeLocalVolumeProvisioner(m)
+	nodeGrabberPodSpec, nodeGrabberLabels := makeNodeGrabber(m)
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeDaemonSet(m, eksNvmeProvisionerPodSpec, eksNvmeProvisionerLabels)
+		},
+		func() object { return makeDaemonSetEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, *daemonsetNames); err != nil {
+		return err
+	}
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeDaemonSet(m, localVolumeProvisionerPodSpec, localVolumeProvisionerLabels)
+		},
+		func() object { return makeDaemonSetEmptyObj() },
+		genericEqualFn, noopUpdaterFn, m, *daemonsetNames); err != nil {
+		return err
+	}
+
+	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
+		func() (object, error) {
+			return makeDeployment(m, nodeGrabberPodSpec, nodeGrabberLabels)
+		},
+		func() object { return makeDeploymentEmptyObj() },
+		deploymentEqualFn, noopUpdaterFn, m, *deploymentNames); err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateStatus(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemonsetNames, deploymentNames, configMapNames, storageClassNames, pvNames *map[string]bool) error {
+	updatedStatus := storageconfluentiov1.LocalStorageStatus{}
+
+	listOpts := []client.ListOption{
+		client.InNamespace(m.Namespace),
+		client.MatchingLabels(addCommonLabels(map[string]string{}, m)),
+	}
+	emptyPodList := makePodList()
+	if err := sdk.List(context.TODO(), emptyPodList, listOpts...); err != nil {
+		return err
+	}
+	podItems := emptyPodList.Items
+	podList := make([]object, len(podItems))
+	for i := 0; i < len(podItems); i++ {
+		podList[i] = &podItems[i]
+	}
+
+	updatedStatus.Pods = getPodNames(podList)
+	sort.Strings(updatedStatus.Pods)
+
+	configMapNamesList := getNamesFromMap(*configMapNames)
+	daemonSetNamesList := getNamesFromMap(*daemonsetNames)
+	deploymentNamesList := getNamesFromMap(*deploymentNames)
+	pvNamesList := getNamesFromMap(*pvNames)
+	storageClassNamesList := getNamesFromMap(*storageClassNames)
+
+	updatedStatus.ConfigMaps = configMapNamesList
+	sort.Strings(updatedStatus.ConfigMaps)
+
+	updatedStatus.DaemonSets = daemonSetNamesList
+	sort.Strings(updatedStatus.DaemonSets)
+
+	updatedStatus.Deployments = deploymentNamesList
+	sort.Strings(updatedStatus.Deployments)
+
+	updatedStatus.PersistentVolumes = pvNamesList
+	sort.Strings(updatedStatus.PersistentVolumes)
+
+	updatedStatus.StorageClasses = storageClassNamesList
+	sort.Strings(updatedStatus.StorageClasses)
+
+	err := statusPatcher(sdk, updatedStatus, m)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) error {
@@ -537,70 +663,18 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 	storageClassNames := make(map[string]bool)
 	pvNames := make(map[string]bool)
 
-	md := m.GetDeletionTimestamp() != nil
-	if md {
-		return executeFinalizers(sdk, m)
-	}
-	cr := checkIfCRExists(sdk, m)
-	if cr {
-		if !ContainsString(m.ObjectMeta.Finalizers, finalizerName) {
-			m.SetFinalizers(append(m.GetFinalizers(), finalizerName))
-			if err := sdk.Update(context.TODO(), m); err != nil {
-				return err
-			}
-		}
-	}
-
-	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
-
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeConfigMap(m, configMapLabels, configMapData)
-		},
-		func() object { return makeConfigMapEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, configMapNames); err != nil {
+	if err := checkFinalizers(sdk, m); err != nil {
 		return err
 	}
 
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeStorageClass(m)
-		},
-		func() object { return makeStorageClassEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, storageClassNames); err != nil {
+	if err := deployInit(sdk, m, &configMapNames, &storageClassNames); err != nil {
 		return err
 	}
 
-	eksNvmeProvisionerPodSpec, eksNvmeProvisionerLabels := makeEKSNVMEProvisioner(m)
-	localVolumeProvisionerPodSpec, localVolumeProvisionerLabels := makeLocalVolumeProvisioner(m)
-	nodeGrabberPodSpec, nodeGrabberLabels := makeNodeGrabber(m)
-
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeDaemonSet(m, eksNvmeProvisionerPodSpec, eksNvmeProvisionerLabels)
-		},
-		func() object { return makeDaemonSetEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, daemonsetNames); err != nil {
+	if err := deployMain(sdk, m, &daemonsetNames, &deploymentNames); err != nil {
 		return err
 	}
 
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeDaemonSet(m, localVolumeProvisionerPodSpec, localVolumeProvisionerLabels)
-		},
-		func() object { return makeDaemonSetEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, daemonsetNames); err != nil {
-		return err
-	}
-
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeDeployment(m, nodeGrabberPodSpec, nodeGrabberLabels)
-		},
-		func() object { return makeDeploymentEmptyObj() },
-		deploymentEqualFn, noopUpdaterFn, m, deploymentNames); err != nil {
-		return err
-	}
 	commonLabels := addCommonLabels(map[string]string{}, m)
 	pvList, err := listObjects(context.TODO(), sdk, m, commonLabels, func() objectList { return makePVListEmptyObj() }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PersistentVolumeList).Items
@@ -621,49 +695,7 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 			return err
 		}
 	}
-
-	updatedStatus := storageconfluentiov1.LocalStorageStatus{}
-
-	listOpts := []client.ListOption{
-		client.InNamespace(m.Namespace),
-		client.MatchingLabels(addCommonLabels(map[string]string{}, m)),
-	}
-	emptyPodList := makePodList()
-	if err := sdk.List(context.TODO(), emptyPodList, listOpts...); err != nil {
-		return err
-	}
-	podItems := emptyPodList.Items
-	podList := make([]object, len(podItems))
-	for i := 0; i < len(podItems); i++ {
-		podList[i] = &podItems[i]
-	}
-
-	updatedStatus.Pods = getPodNames(podList)
-	sort.Strings(updatedStatus.Pods)
-
-	configMapNamesList := getNamesFromMap(configMapNames)
-	daemonSetNamesList := getNamesFromMap(daemonsetNames)
-	deploymentNamesList := getNamesFromMap(deploymentNames)
-	pvNamesList := getNamesFromMap(pvNames)
-	storageClassNamesList := getNamesFromMap(storageClassNames)
-
-	updatedStatus.ConfigMaps = configMapNamesList
-	sort.Strings(updatedStatus.ConfigMaps)
-
-	updatedStatus.DaemonSets = daemonSetNamesList
-	sort.Strings(updatedStatus.DaemonSets)
-
-	updatedStatus.Deployments = deploymentNamesList
-	sort.Strings(updatedStatus.Deployments)
-
-	updatedStatus.PersistentVolumes = pvNamesList
-	sort.Strings(updatedStatus.PersistentVolumes)
-
-	updatedStatus.StorageClasses = storageClassNamesList
-	sort.Strings(updatedStatus.StorageClasses)
-
-	err = statusPatcher(sdk, updatedStatus, m)
-	if err != nil {
+	if err := updateStatus(sdk, m, &daemonsetNames, &deploymentNames, &configMapNames, &storageClassNames, &pvNames); err != nil {
 		return err
 	}
 	return nil
