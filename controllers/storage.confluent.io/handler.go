@@ -510,8 +510,8 @@ func executeFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) 
 
 }
 
-func checkIfCRExists(sdk client.Client, m *storageconfluentiov1.LocalStorage) bool {
-	if err := sdk.Get(context.TODO(), *namespacedName(m.Name, m.Namespace), makeLocalStorageEmptyObj()); err != nil {
+func checkIfCRExists(sdk client.Client, emptyObjFn func() object, name, namespace string) bool {
+	if err := sdk.Get(context.TODO(), *namespacedName(name, namespace), emptyObjFn()); err != nil {
 		return false
 	} else {
 		return true
@@ -533,7 +533,7 @@ func checkFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) er
 	if md {
 		return executeFinalizers(sdk, m)
 	}
-	cr := checkIfCRExists(sdk, m)
+	cr := checkIfCRExists(sdk, func() object { return makeLocalStorageEmptyObj() }, m.Name, m.Namespace)
 	if cr {
 		if !ContainsString(m.ObjectMeta.Finalizers, finalizerName) {
 			m.SetFinalizers(append(m.GetFinalizers(), finalizerName))
