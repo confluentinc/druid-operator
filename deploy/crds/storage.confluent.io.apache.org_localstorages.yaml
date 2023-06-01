@@ -35,13 +35,13 @@ spec:
           spec:
             description: LocalStorageSpec defines the desired state of LocalStorage
             properties:
-              eksImage:
+              eksNVMEProvisionerImage:
                 type: string
               forceDeploy:
                 type: boolean
               instanceType:
                 type: string
-              localVolumeImage:
+              localVolumeProvisionerImage:
                 type: string
               nodeGrabberImage:
                 type: string
@@ -54,10 +54,10 @@ spec:
               storageClassName:
                 type: string
             required:
-            - eksImage
+            - eksNVMEProvisionerImage
             - forceDeploy
             - instanceType
-            - localVolumeImage
+            - localVolumeProvisionerImage
             - nodeGrabberImage
             - replicas
             - serviceAccountName
