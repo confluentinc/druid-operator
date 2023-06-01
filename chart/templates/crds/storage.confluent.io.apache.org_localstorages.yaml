@@ -1,0 +1,103 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.2
+  creationTimestamp: null
+  name: localstorages.storage.confluent.io.apache.org
+spec:
+  group: storage.confluent.io.apache.org
+  names:
+    kind: LocalStorage
+    listKind: LocalStorageList
+    plural: localstorages
+    singular: localstorage
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              # Image of the DaemonSet EKS NVME Provisioner
+              eksNVMEProvisionerImage:
+                type: string
+              # Deploy the CR forcefully
+              forceDeploy:
+                type: boolean
+              # AWS EC2 Instance Type
+              instanceType:
+                type: string
+              # Image of the DaemonSet Static Local Volume Provisioner
+              localVolumeProvisionerImage:
+                type: string
+               # Image of the Deployment Node Grabber, just to run a no-op
+              nodeGrabberImage:
+                type: string
+              # Number of replicas of the `instanceType`
+              replicas:
+                type: integer
+              # Name of the Service Account to be used by the resources of this CR
+              serviceAccountName:
+                type: string
+              # Name of the Storage Class to be created to use with this CR
+              storageClassName:
+                type: string
+            required:
+            - eksNVMEProvisionerImage
+            - forceDeploy
+            - instanceType
+            - localVolumeProvisionerImage
+            - nodeGrabberImage
+            - replicas
+            - serviceAccountName
+            - storageClassName
+            type: object
+          status:
+            properties:
+              configMaps:
+                items:
+                  type: string
+                type: array
+              daemonSets:
+                items:
+                  type: string
+                type: array
+              deployments:
+                items:
+                  type: string
+                type: array
+              eksNvmeProvisioner:
+                type: string
+              lastUpdated:
+                type: string
+              localVolumeProvisioner:
+                type: string
+              nodeGrabber:
+                type: string
+              persistentVolumes:
+                items:
+                  type: string
+                type: array
+              pods:
+                items:
+                  type: string
+                type: array
+              storageClass:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

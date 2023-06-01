@@ -35,7 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
-	//+kubebuilder:scaffold:imports
+	localStoragev1 "github.com/datainfrahq/druid-operator/apis/storage.confluent.io/v1"
+	localStorageController "github.com/datainfrahq/druid-operator/controllers/storage.confluent.io"
+	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -48,6 +50,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(druidv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(localStoragev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -101,14 +104,17 @@ func main() {
 	}
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+	if err = localStorageController.NewLocalStorageReconciler(mgr).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LocalStorage")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
+	/*
+		if err = (&localStoragev1.LocalStorage{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "LocalStorage")
+			os.Exit(1)
+		}
+	*/
+	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
