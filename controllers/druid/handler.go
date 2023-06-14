@@ -213,7 +213,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 				}
 
 				// Default is set to true
-				execCheckCrashStatus(sdk, &nodeSpec, m, emitEvents)
+				execCheckCrashStatus(sdk, &nodeSpec, m, nodeSpecUniqueStr, emitEvents)
 
 				// Ignore isObjFullyDeployed() for the first iteration ie cluster creation
 				// will force cluster creation in parallel, post first iteration rolling updates
@@ -228,7 +228,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 			}
 
 			// Default is set to true
-			execCheckCrashStatus(sdk, &nodeSpec, m, emitEvents)
+			execCheckCrashStatus(sdk, &nodeSpec, m, nodeSpecUniqueStr, emitEvents)
 		}
 
 		// Create Ingress Spec
@@ -562,18 +562,18 @@ func executeFinalizers(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmi
 
 }
 
-func execCheckCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, event EventEmitter) {
+func execCheckCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr string, event EventEmitter) {
 	if m.Spec.ForceDeleteStsPodOnError == false {
 		return
 	} else {
 		if nodeSpec.PodManagementPolicy == "OrderedReady" {
-			checkCrashStatus(sdk, nodeSpec, m, event)
+			checkCrashStatus(sdk, nodeSpec, m, nodeSpecUniqueStr, event)
 		}
 	}
 }
 
-func checkCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
-	podList, err := readers.List(context.TODO(), sdk, drd, makeLabelsForNodeSpec(&nodeSpec, m, m.Name, makeNodeSpecificUniqueString(m, key)), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
+func checkCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, drd *v1alpha1.Druid, nodeSpecUniqueStr string, emitEvents EventEmitter) error {
+	podList, err := readers.List(context.TODO(), sdk, drd, makeLabelsForNodeSpec(nodeSpec, drd, drd.Name, nodeSpecUniqueStr), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
 		result := make([]object, len(items))
 		for i := 0; i < len(items); i++ {
