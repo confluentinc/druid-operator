@@ -567,14 +567,13 @@ func execCheckCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, m
 		return
 	} else {
 		if nodeSpec.PodManagementPolicy == "OrderedReady" {
-			checkCrashStatus(sdk, m, event)
+			checkCrashStatus(sdk, nodeSpec, m, event)
 		}
 	}
 }
 
-func checkCrashStatus(sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
-
-	podList, err := readers.List(context.TODO(), sdk, drd, makeLabelsForDruid(drd.Name), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
+func checkCrashStatus(sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
+	podList, err := readers.List(context.TODO(), sdk, drd, makeLabelsForNodeSpec(&nodeSpec, m, m.Name, makeNodeSpecificUniqueString(m, key)), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
 		result := make([]object, len(items))
 		for i := 0; i < len(items); i++ {
