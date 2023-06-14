@@ -43,7 +43,7 @@ serviceAccount:
     kubectl.kubernetes.io/default-container: manager
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "druid-operator-controller-manager"
+  name: "druid-operator"
 
 podAnnotations: {}
 
