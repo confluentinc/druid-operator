@@ -138,13 +138,6 @@ func testLocalStorageOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 			return errors.New(fmt.Sprintf("Failed to get expected Deployments, got [%v]", ls.Status.Deployments))
 		}
 
-		expectedSC := []string{
-			lsCR.Spec.StorageClassName,
-		}
-		if !areStringArraysEqual(ls.Status.StorageClasses, expectedSC) {
-			return errors.New(fmt.Sprintf("Failed to get expected SCs, got [%v]", ls.Status.StorageClasses))
-		}
-
 		return nil
 	}, time.Millisecond*250, time.Second*45)
 

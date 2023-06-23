@@ -545,7 +545,7 @@ func checkFinalizers(sdk client.Client, m *storageconfluentiov1.LocalStorage) er
 	return nil
 }
 
-func deployInit(sdk client.Client, m *storageconfluentiov1.LocalStorage, configMapNames, storageClassNames *map[string]bool) error {
+func deployInit(sdk client.Client, m *storageconfluentiov1.LocalStorage, configMapNames *map[string]bool) error {
 	configMapData, configMapLabels := makeLocalVolumeProvisionerConfigMap(m)
 
 	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
@@ -557,14 +557,6 @@ func deployInit(sdk client.Client, m *storageconfluentiov1.LocalStorage, configM
 		return err
 	}
 
-	if _, err := sdkCreateOrUpdateAsNeeded(sdk,
-		func() (object, error) {
-			return makeStorageClass(m)
-		},
-		func() object { return makeStorageClassEmptyObj() },
-		genericEqualFn, noopUpdaterFn, m, *storageClassNames); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -602,7 +594,7 @@ func deployMain(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemons
 	return nil
 }
 
-func updateStatus(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemonsetNames, deploymentNames, configMapNames, storageClassNames, pvNames *map[string]bool) error {
+func updateStatus(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemonsetNames, deploymentNames, configMapNames, pvNames *map[string]bool) error {
 	updatedStatus := storageconfluentiov1.LocalStorageStatus{}
 
 	listOpts := []client.ListOption{
@@ -626,7 +618,6 @@ func updateStatus(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemo
 	daemonSetNamesList := getNamesFromMap(*daemonsetNames)
 	deploymentNamesList := getNamesFromMap(*deploymentNames)
 	pvNamesList := getNamesFromMap(*pvNames)
-	storageClassNamesList := getNamesFromMap(*storageClassNames)
 
 	updatedStatus.ConfigMaps = configMapNamesList
 	sort.Strings(updatedStatus.ConfigMaps)
@@ -639,9 +630,6 @@ func updateStatus(sdk client.Client, m *storageconfluentiov1.LocalStorage, daemo
 
 	updatedStatus.PersistentVolumes = pvNamesList
 	sort.Strings(updatedStatus.PersistentVolumes)
-
-	updatedStatus.StorageClasses = storageClassNamesList
-	sort.Strings(updatedStatus.StorageClasses)
 
 	err := statusPatcher(sdk, updatedStatus, m)
 	if err != nil {
@@ -660,14 +648,13 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 	daemonsetNames := make(map[string]bool)
 	deploymentNames := make(map[string]bool)
 	configMapNames := make(map[string]bool)
-	storageClassNames := make(map[string]bool)
 	pvNames := make(map[string]bool)
 
 	if err := checkFinalizers(sdk, m); err != nil {
 		return err
 	}
 
-	if err := deployInit(sdk, m, &configMapNames, &storageClassNames); err != nil {
+	if err := deployInit(sdk, m, &configMapNames); err != nil {
 		return err
 	}
 
@@ -695,7 +682,7 @@ func deployCluster(sdk client.Client, m *storageconfluentiov1.LocalStorage) erro
 			return err
 		}
 	}
-	if err := updateStatus(sdk, m, &daemonsetNames, &deploymentNames, &configMapNames, &storageClassNames, &pvNames); err != nil {
+	if err := updateStatus(sdk, m, &daemonsetNames, &deploymentNames, &configMapNames, &pvNames); err != nil {
 		return err
 	}
 	return nil
