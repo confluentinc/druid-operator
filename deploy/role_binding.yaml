@@ -5,6 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: druid-operator
+  namespace: default
 roleRef:
   kind: Role
   name: druid-operator

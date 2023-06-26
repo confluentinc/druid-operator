@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    localStorageResourceHash: 1o3v4RqXSY4/bIm7T6YwccvcA5M=
+  creationTimestamp: null
+  name: local-storage-local-volume-provisioner-localstorage-sample
+  namespace: sada-test
+spec:
+  selector:
+    matchLabels:
+      cr-name: localstorage-sample
+      name: local-volume-provisioner
+      operator-name: LocalStorage
+      operator-version: storage.confluent.io-v1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        cr-name: localstorage-sample
+        name: local-volume-provisioner
+        operator-name: LocalStorage
+        operator-version: storage.confluent.io-v1
+    spec:
+      containers:
+      - env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: MY_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: quay.io/external_storage/local-volume-provisioner:v2.3.3
+        imagePullPolicy: Always
+        name: local-volume-provisioner
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
+          requests:
+            cpu: 50m
+            memory: 100Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/provisioner/config
+          name: provisioner-config
+          readOnly: true
+        - mountPath: /dev
+          name: provisioner-dev
+        - mountPath: /pv-disks
+          mountPropagation: HostToContainer
+          name: local-storage
+      nodeSelector:
+        beta.kubernetes.io/instance-type: i3.large
+      serviceAccountName: druid-operator
+      volumes:
+      - hostPath:
+          path: /pv-disks
+          type: ""
+        name: local-storage
+      - hostPath:
+          path: /dev
+          type: ""
+        name: provisioner-dev
+      - configMap:
+          defaultMode: 272
+          name: local-volume-provisioner
+        name: provisioner-config
+  updateStrategy: {}
+status:
+  currentNumberScheduled: 0
+  desiredNumberScheduled: 0
+  numberMisscheduled: 0
+  numberReady: 0
