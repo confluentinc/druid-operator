@@ -37,7 +37,10 @@ const (
 )
 
 func verifySpec(m *storageconfluentiov1.LocalStorage) error {
-	keyValidationRegex, err := regexp.Compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*")
+	// The regex is used to validate proper naming convention accepted by Kubernetes
+	regex := "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
+
+	keyValidationRegex, err := regexp.Compile(regex)
 	if err != nil {
 		return err
 	}
@@ -45,7 +48,7 @@ func verifySpec(m *storageconfluentiov1.LocalStorage) error {
 	errorMsg := ""
 
 	if !keyValidationRegex.MatchString(m.Name) {
-		errorMsg = fmt.Sprintf("%sName[%s] must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, m.Name)
+		errorMsg = fmt.Sprintf("%sName[%s] must match k8s resource name regex '%s'", errorMsg, m.Name, regex)
 	}
 
 	if m.Spec.InstanceType == "" {
