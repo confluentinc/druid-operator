@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  labelsForPV: '{"cr-name":"localstorage-sample","name":"local-volume-provisioner","operator-name":"LocalStorage","operator-version":"storage.confluent.io-v1"}'
+  setPVOwnerRef: "true"
+  storageClassMap: |
+    local-storage:
+        hostDir: /pv-disks
+        mountDir: /pv-disks
+  useNodeNameOnly: "true"
+kind: ConfigMap
+metadata:
+  annotations:
+    localStorageResourceHash: Lg19CuEo5In9OH4gqAQ0/tDa+r4=
+  creationTimestamp: null
+  labels:
+    cr-name: localstorage-sample
+    name: local-volume-provisioner
+    operator-name: LocalStorage
+    operator-version: storage.confluent.io-v1
+  name: local-storage-local-volume-provisioner-localstorage-sample
+  namespace: sada-test
