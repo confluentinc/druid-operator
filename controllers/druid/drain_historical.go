@@ -173,8 +173,8 @@ func deployHistorical(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.D
 				if err != nil {
 					return err
 				} else {
-					// msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was drained completely", m.Status.Historical.DecommissionedPods[0].GetName(), m.Status.Historical.DecommissionedPods[0].GetNamespace())
-					// logger_drain_historical.Info(msg, "Object", stringifyForLogging(m.Status.Historical.DecommissionedPods[0], m), "name", m.Name, "namespace", m.Namespace)
+					msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was drained completely", pod.(*v1.Pod).Name, pod.(*v1.Pod).Namespace)
+					logger_drain_historical.Info(msg, "Object", stringifyForLogging(pod.(*v1.Pod), m), "name", m.Name, "namespace", m.Namespace)
 					m.Status.Historical.DecommissionedPods = m.Status.Historical.DecommissionedPods[1:]
 				}
 			}
