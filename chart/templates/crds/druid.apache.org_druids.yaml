@@ -1857,6 +1857,14 @@ spec:
                 type: object
               nodes:
                 additionalProperties:
+                  enum:
+                  - historical
+                  - overlord
+                  - middleManager
+                  - indexer
+                  - broker
+                  - coordinator
+                  - router
                   properties:
                     affinity:
                       description: Affinity to be used to for enabling node, pod affinity
@@ -2740,6 +2748,8 @@ spec:
                               type: array
                           type: object
                       type: object
+                    apiVersion:
+                      type: string
                     containerSecurityContext:
                       description: Druid pods container-security-context
                       properties:
@@ -2912,6 +2922,16 @@ spec:
                                 takes precedence.
                               type: string
                           type: object
+                      type: object
+                    deploymentConfig:
+                      properties:
+                        batchSize:
+                          format: int32
+                          type: integer
+                        mode:
+                          type: string
+                      required:
+                      - mode
                       type: object
                     druid.port:
                       description: Port used by Druid Process
@@ -4438,6 +4458,8 @@ spec:
                         if kind=Deployment, by default set to 25%
                       format: int32
                       type: integer
+                    metadata:
+                      type: object
                     nodeConfigMountPath:
                       description: in-container directory to mount with runtime.properties,
                         jvm.config, log4j2.xml files
@@ -4448,6 +4470,7 @@ spec:
                       description: Node selector to be used by Druid statefulsets
                       type: object
                     nodeType:
+<<<<<<< HEAD
                       description: Druid node type
                       enum:
                       - historical
@@ -4457,6 +4480,8 @@ spec:
                       - broker
                       - coordinator
                       - router
+=======
+>>>>>>> b5b8a8a (Add support for auto deployment for historicals)
                       type: string
                     persistentVolumeClaim:
                       items:
@@ -11496,6 +11521,23 @@ spec:
           status:
             description: DruidStatus defines the observed state of Druid
             properties:
+              HistoricalStatus:
+                properties:
+                  currentBatch:
+                    format: int32
+                    type: integer
+                  decommissionedPods:
+                    items:
+                      type: string
+                    type: array
+                  replica:
+                    format: int32
+                    type: integer
+                required:
+                - currentBatch
+                - decommissionedPods
+                - replica
+                type: object
               configMaps:
                 items:
                   type: string
