@@ -903,14 +903,6 @@ spec:
                 type: object
               nodes:
                 additionalProperties:
-                  enum:
-                  - historical
-                  - overlord
-                  - middleManager
-                  - indexer
-                  - broker
-                  - coordinator
-                  - router
                   properties:
                     affinity:
                       properties:
@@ -1277,8 +1269,6 @@ spec:
                               type: array
                           type: object
                       type: object
-                    apiVersion:
-                      type: string
                     containerSecurityContext:
                       properties:
                         allowPrivilegeEscalation:
@@ -2099,8 +2089,6 @@ spec:
                     maxUnavailable:
                       format: int32
                       type: integer
-                    metadata:
-                      type: object
                     nodeConfigMountPath:
                       type: string
                     nodeSelector:
@@ -2108,6 +2096,14 @@ spec:
                         type: string
                       type: object
                     nodeType:
+                      enum:
+                      - historical
+                      - overlord
+                      - middleManager
+                      - indexer
+                      - broker
+                      - coordinator
+                      - router
                       type: string
                     persistentVolumeClaim:
                       items:

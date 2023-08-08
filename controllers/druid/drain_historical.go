@@ -35,15 +35,15 @@ func checkDrainStatus(d DruidClient, start int32, end int32, podNames []string) 
 }
 
 func patchUpdateStrategy(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.DruidNodeSpec, strategy string, emitEvent EventEmitter) error {
-	updatedObj := nodeSpec.DeepCopy()
+	updatedObj := m.DeepCopy()
 
-	newStrategy := appsv1.StatefulSetUpdateStrategy{
+	newStrategy := &appsv1.StatefulSetUpdateStrategy{
 		Type: appsv1.OnDeleteStatefulSetStrategyType,
 	}
 
-	updatedObj.UpdateStrategy = &newStrategy
+	updatedObj.Spec.Nodes["historicals"].UpdateStrategy = newStrategy
 
-	if err := writers.Patch(context.TODO(), sdk, m, updatedObj, false, client.MergeFrom(nodeSpec), emitEvent); err != nil {
+	if err := writers.Patch(context.TODO(), sdk, m, updatedObj, false, client.MergeFrom(m), emitEvent); err != nil {
 		return err
 	} else {
 		msg := fmt.Sprintf("Successfully Patched %s with %s", nodeSpec.UpdateStrategy, onDelete)
@@ -53,10 +53,10 @@ func patchUpdateStrategy(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha
 }
 
 func scaleStatefulSet(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.DruidNodeSpec, strategy string, emitEvent EventEmitter, scaleUpCount int32) error {
-	updatedObj := nodeSpec.DeepCopy()
+	updatedObj := m.DeepCopy()
 	newReplica := int32(m.Status.Historical.Replica + scaleUpCount)
-	updatedObj.Replicas = newReplica
-	if err := writers.Patch(context.TODO(), sdk, m, updatedObj, false, client.MergeFrom(nodeSpec), emitEvent); err != nil {
+	updatedObj.Spec.Nodes["historicals"].Replicas = newReplica
+	if err := writers.Patch(context.TODO(), sdk, m, updatedObj, false, client.MergeFrom(m), emitEvent); err != nil {
 		return err
 	} else {
 		msg := fmt.Sprintf("Successfully Patched replicas with %d", newReplica)

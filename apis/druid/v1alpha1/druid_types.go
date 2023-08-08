@@ -214,7 +214,7 @@ type DruidSpec struct {
 	// that is, it must match regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
 
 	// +required
-	Nodes map[string]DruidNodeSpec `json:"nodes"`
+	Nodes map[string]*DruidNodeSpec `json:"nodes"`
 
 	// Operator deploys the sidecar container based on these properties. Sidecar will be deployed for all the Druid pods.
 	// +optional
@@ -242,13 +242,10 @@ type DruidSpec struct {
 	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
 }
 
-// +kubebuilder:object:root=true
 type DruidNodeSpec struct {
 	// Druid node type
 	// +required
 	// +kubebuilder:validation:Enum:=historical;overlord;middleManager;indexer;broker;coordinator;router
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	NodeType string `json:"nodeType"`
 
@@ -489,5 +486,5 @@ type DruidList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&Druid{}, &DruidList{}, &DruidNodeSpec{})
+	SchemeBuilder.Register(&Druid{}, &DruidList{})
 }
