@@ -2921,8 +2921,7 @@ spec:
                           type: integer
                         mode:
                           type: string
-                      required:
-                      - mode
+                          default: RollingUpdate
                       type: object
                     druid.port:
                       description: Port used by Druid Process
