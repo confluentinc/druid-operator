@@ -5087,7 +5087,7 @@ spec:
             type: object
           status:
             properties:
-              HistoricalStatus:
+              historicalStatus:
                 properties:
                   currentBatch:
                     format: int32

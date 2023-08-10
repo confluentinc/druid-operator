@@ -462,7 +462,7 @@ type DruidClusterStatus struct {
 	HPAutoScalers          []string            `json:"hpAutoscalers,omitempty"`
 	Pods                   []string            `json:"pods,omitempty"`
 	PersistentVolumeClaims []string            `json:"persistentVolumeClaims,omitempty"`
-	Historical             HistoricalStatus    `json:"HistoricalStatus,omitempty"`
+	Historical             HistoricalStatus    `json:"historicalStatus,omitempty"`
 }
 
 // +kubebuilder:object:root=true

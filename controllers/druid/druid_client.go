@@ -29,6 +29,9 @@ func (d DruidClient) GetCoordinatorConfig() (map[string]interface{}, error) {
 		return nil, err
 	}
 	bodyText, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	s := string(bodyText)
 	var m map[string]interface{}
 	json.Unmarshal([]byte(s), &m)
@@ -51,7 +54,7 @@ func (d DruidClient) UpdateCoordinatorConfig(config map[string]interface{}) erro
 	return nil
 }
 
-func (d DruidClient) GetHistoricalUsage() (map[string]interface{}, error) {
+func (d DruidClient) GetHistoricalUsage() (map[string]int, error) {
 	payload := map[string]string{
 		"query": "SELECT \"server\" AS \"service\", \"tier\", \"curr_size\", \"max_size\" FROM sys.servers WHERE server_type = 'historical' ORDER BY \"service\" DESC",
 	}
@@ -70,7 +73,7 @@ func (d DruidClient) GetHistoricalUsage() (map[string]interface{}, error) {
 		return nil, err
 	}
 	for _, stat := range m {
-		usageMap[strings.Split(stat["service"].(string), ".")[0]] = stat["curr_size"]
+		usageMap[strings.Split(stat["service"].(string), ".")[0]] = int(stat["curr_size"].(float64))
 	}
 	return usageMap, nil
 }

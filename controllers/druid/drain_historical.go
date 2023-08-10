@@ -27,6 +27,10 @@ func checkDrainStatus(d DruidClient, start int32, end int32, podNames []string) 
 		return false, err
 	}
 	for it := start; it <= end; it++ {
+		usageStats, exists := historicalUsageStats[podNames[it]]
+		if !exists {
+			return false, fmt.Errorf("Result doesnt contain usage for the pod %s", podNames[it])
+		}
 		if historicalUsageStats[podNames[it]] != 0 {
 			return false, nil
 		}
