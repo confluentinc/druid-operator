@@ -11,7 +11,24 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# The build options that need to be passed to compile in boring-crypto includes GOOS=linux. This causes compilation errors when building the binary on Macbooks. Hence making it conditional to enable boring-crypto only when compiled in linux env (ex: our CI).
+HOST_OS := $(shell uname | tr A-Z a-z)
+ARCH := $(shell uname -m)
+ifneq ($(HOST_OS),darwin)
+ifneq (,$(filter $(ARCH),amd64 x86_64))
+  # Enable BoringCrypto all the time.
+  GO_FIPS_ENABLE_INPLACE := true
+endif
+endif
+
+
 all: manager
+
+ifneq ($(HOST_OS),darwin)
+ifneq (,$(filter $(ARCH),amd64 x86_64))
+test: export GOEXPERIMENT := boringcrypto
+endif
+endif
 
 # Run tests
 test: generate fmt vet manifests
@@ -73,7 +90,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0-beta.0 ;\
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.6.0-beta.0 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
