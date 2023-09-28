@@ -1,6 +1,6 @@
 name: druid-operator
-lang: unknown
-lang_version: unknown
+lang: golang
+lang_version: 1.20.6
 git:
   enable: true
 github:
