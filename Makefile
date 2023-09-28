@@ -4,6 +4,9 @@ IMG ?= "druid-operator:latest"
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:maxDescLen=0,trivialVersions=true,generateEmbeddedObjectMeta=true"
 
+GO_FIPS_ENV_VARS ?=
+GOEXPERIMENT ?=
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -16,31 +19,24 @@ HOST_OS := $(shell uname | tr A-Z a-z)
 ARCH := $(shell uname -m)
 ifneq ($(HOST_OS),darwin)
 ifneq (,$(filter $(ARCH),amd64 x86_64))
-  # Enable BoringCrypto all the time.
-  GO_FIPS_ENABLE_INPLACE := true
+GO_FIPS_ENV_VARS = CGO_ENABLED=1 GOOS=linux
+GOEXPERIMENT = boringcrypto
 endif
 endif
-
 
 all: manager
 
-ifneq ($(HOST_OS),darwin)
-ifneq (,$(filter $(ARCH),amd64 x86_64))
-test: export GOEXPERIMENT := boringcrypto
-endif
-endif
-
 # Run tests
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+	$(GOEXPERIMENT) $(GO_FIPS_ENV_VARS) go test ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager main.go
+	$(GOEXPERIMENT) $(GO_FIPS_ENV_VARS) go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet manifests
-	go run ./main.go
+	$(GOEXPERIMENT) $(GO_FIPS_ENV_VARS) go run ./main.go
 
 # Install CRDs into a cluster
 install: manifests
@@ -67,7 +63,7 @@ fmt:
 
 # Run go vet against code
 vet:
-	go vet ./...
+	$(GOEXPERIMENT) $(GO_FIPS_ENV_VARS) go vet ./...
 
 # Generate code
 generate: controller-gen
