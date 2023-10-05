@@ -72,7 +72,8 @@ vet:
 
 # Generate code
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(if $(GO_EXPERIMENTS),GOEXPERIMENT=$(subst $(_space),$(_comma),$(GO_EXPERIMENTS))) \
+	$(GO_FIPS_ENV_VARS) $(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
 docker-build: generate manifests
