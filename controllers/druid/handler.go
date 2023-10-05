@@ -979,18 +979,18 @@ func getVolume(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniq
 }
 
 func getCommand(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
-  if (m.Spec.StartScript != "" && m.Spec.EntryArg != "") {
-      return []string{m.Spec.StartScript}
-  }
-  return []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType}
+	if m.Spec.StartScript != "" && m.Spec.EntryArg != "" {
+		return []string{m.Spec.StartScript}
+	}
+	return []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType}
 }
 
 func getEntryArg(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []string {
-  if (m.Spec.EntryArg != "") {
-      bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", firstNonEmptyStr(m.Spec.DruidScript, "bin/run-druid.sh"), nodeSpec.NodeType}, " ")
-      return []string{"-c", bashCommands}
-  }
-  return nil
+	if m.Spec.EntryArg != "" {
+		bashCommands := strings.Join([]string{m.Spec.EntryArg, "&&", firstNonEmptyStr(m.Spec.DruidScript, "bin/run-druid.sh"), nodeSpec.NodeType}, " ")
+		return []string{"-c", bashCommands}
+	}
+	return nil
 }
 
 func getEnv(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, configMapSHA string) []v1.EnvVar {
@@ -1158,7 +1158,7 @@ func makePodTemplate(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 // makePodSpec shall create podSpec common to both deployment and statefulset.
 func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr, configMapSHA string) v1.PodSpec {
 	spec := v1.PodSpec{
-		NodeSelector:              firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
+		NodeSelector:     firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
 		Tolerations:      getTolerations(nodeSpec, m),
 		Affinity:         getAffinity(nodeSpec, m),
 		ImagePullSecrets: firstNonNilValue(nodeSpec.ImagePullSecrets, m.Spec.ImagePullSecrets).([]v1.LocalObjectReference),
