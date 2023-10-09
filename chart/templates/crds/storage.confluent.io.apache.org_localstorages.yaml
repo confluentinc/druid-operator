@@ -18,37 +18,37 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
+        description: LocalStorage is the Schema for the localstorages API
         properties:
           apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
+            description: LocalStorageSpec defines the desired state of LocalStorage
             properties:
-              # Image of the DaemonSet EKS NVME Provisioner
               eksNVMEProvisionerImage:
                 type: string
-              # Deploy the CR forcefully
               forceDeploy:
                 type: boolean
-              # AWS EC2 Instance Type
               instanceType:
                 type: string
-              # Image of the DaemonSet Static Local Volume Provisioner
               localVolumeProvisionerImage:
                 type: string
-               # Image of the Deployment Node Grabber, just to run a no-op
               nodeGrabberImage:
                 type: string
-              # Number of replicas of the `instanceType`
               replicas:
                 type: integer
-              # Name of the Service Account to be used by the resources of this CR
               serviceAccountName:
                 type: string
-              # Name of the Storage Class to be created to use with this CR
               storageClassName:
                 type: string
             required:
@@ -62,6 +62,7 @@ spec:
             - storageClassName
             type: object
           status:
+            description: LocalStorageStatus defines the observed state of LocalStorage
             properties:
               configMaps:
                 items:
@@ -78,6 +79,9 @@ spec:
               eksNvmeProvisioner:
                 type: string
               lastUpdated:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
                 type: string
               localVolumeProvisioner:
                 type: string
