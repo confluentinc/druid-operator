@@ -9,6 +9,7 @@ spec:
     url: git@github.com:confluentinc/druid-operator.git
     run_on:
     - branches
+    - tags
     - pull_requests
     pipeline_file: .semaphore/semaphore.yml
     integration_type: github_app

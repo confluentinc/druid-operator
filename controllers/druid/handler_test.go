@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 
 	"github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 )
 
 func TestMakeStatefulSetForBroker(t *testing.T) {
@@ -26,6 +26,20 @@ func TestMakeStatefulSetForBroker(t *testing.T) {
 	expected := new(appsv1.StatefulSet)
 	readAndUnmarshallResource("testdata/broker-statefulset.yaml", &expected, t)
 
+	assertEquals(expected, actual, t)
+}
+
+func TestMakeStatefulSetForBrokerWithSidecar(t *testing.T) {
+	clusterSpec := readSampleDruidClusterSpecWithSidecar(t)
+
+	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+
+	actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+	addHashToObject(actual)
+
+	expected := new(appsv1.StatefulSet)
+	readAndUnmarshallResource("testdata/broker-statefulset-sidecar.yaml", &expected, t)
 	assertEquals(expected, actual, t)
 }
 
@@ -53,7 +67,7 @@ func TestMakePodDisruptionBudgetForBroker(t *testing.T) {
 	actual, _ := makePodDisruptionBudget(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
 	addHashToObject(actual)
 
-	expected := new(v1beta1.PodDisruptionBudget)
+	expected := new(policyv1.PodDisruptionBudget)
 	readAndUnmarshallResource("testdata/broker-pod-disruption-budget.yaml", &expected, t)
 
 	assertEquals(expected, actual, t)
@@ -118,6 +132,10 @@ func TestMakeBrokerConfigMap(t *testing.T) {
 
 func readSampleDruidClusterSpec(t *testing.T) *v1alpha1.Druid {
 	return readDruidClusterSpecFromFile(t, "testdata/druid-test-cr.yaml")
+}
+
+func readSampleDruidClusterSpecWithSidecar(t *testing.T) *v1alpha1.Druid {
+	return readDruidClusterSpecFromFile(t, "testdata/druid-test-cr-sidecar.yaml")
 }
 
 func readDruidClusterSpecFromFile(t *testing.T, filePath string) *v1alpha1.Druid {

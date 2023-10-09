@@ -1,14 +1,15 @@
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
     app: druid
     druid_cr: druid-test
     nodeSpecUniqueStr: druid-druid-test-brokers
+    component: broker
   name: druid-druid-test-brokers
   namespace: test-namespace
   annotations:
-    druidOpResourceHash: iF0BSmXKN+Oi1rBfod127UnVkR0=
+    druidOpResourceHash: DmYcIjqpkJs9KWZ/tfHgHPBJ/wo=
 spec:
   maxUnavailable: 1
   selector:
@@ -16,3 +17,4 @@ spec:
       app: druid
       druid_cr: druid-test
       nodeSpecUniqueStr: druid-druid-test-brokers
+      component: broker

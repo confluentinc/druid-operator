@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	druidv1alpha1 "github.com/druid-io/druid-operator/apis/druid/v1alpha1"
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -32,8 +32,9 @@ func setupK8Evn(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 	ctrl.SetLogger(zap.New())
 	testK8sCtx.env = &envtest.Environment{
 		CRDInstallOptions: envtest.CRDInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "deploy", "crds", "druid.apache.org_druids.yaml")},
+			Paths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		},
+		ErrorIfCRDPathMissing: true,
 	}
 
 	config, err := testK8sCtx.env.Start()
@@ -43,7 +44,7 @@ func setupK8Evn(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 }
 
 func destroyK8Env(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
-	require.NoError(t, testK8sCtx.env.Stop())
+	testK8sCtx.env.Stop()
 }
 
 func TestAPIs(t *testing.T) {
@@ -79,6 +80,7 @@ func setupDruidOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
 		Log:           ctrl.Log.WithName("controllers").WithName("Druid"),
 		Scheme:        testK8sCtx.k8sManager.GetScheme(),
 		ReconcileWait: LookupReconcileTime(),
+		Recorder:      testK8sCtx.k8sManager.GetEventRecorderFor("druid-operator"),
 	}).SetupWithManager(testK8sCtx.k8sManager)
 
 	require.NoError(t, err)

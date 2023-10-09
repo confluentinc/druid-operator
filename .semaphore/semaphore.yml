@@ -12,7 +12,10 @@ blocks:
           - sem-version go 1.20.6
           - checkout
       jobs:
-        - name: Build and Test
+        - name: Build, Test
           commands:
-            - make manager
+            - make build
             - make test
+            - make helm-lint
+            - make helm-template
+            - make docker-build
