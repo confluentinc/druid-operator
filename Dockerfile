@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.15 as builder
+FROM golang:1.20.6 as builder
 
 WORKDIR /workspace
 
@@ -10,6 +10,7 @@ RUN curl -L -O "https://github.com/kubernetes-sigs/kubebuilder/releases/download
 RUN tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz
 RUN mv kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH} kubebuilder && mv kubebuilder /usr/local/
 RUN export PATH=$PATH:/usr/local/kubebuilder/bin
+RUN export KUBEBUILDER_ASSETS=/usr/local/kubebuilder/bin
 
 COPY . .
 
