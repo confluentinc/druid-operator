@@ -107,3 +107,4 @@ init-ci:
 	sudo mkdir -p /usr/local/kubebuilder && \
 		sudo tar -zxvf kubebuilder_${KUBEBUILDER_VERSION}_linux_${OS_ARCH}.tar.gz --strip-components=1 -C /usr/local/kubebuilder/
 	export PATH=$PATH:/usr/local/kubebuilder/bin
+	export KUBEBUILDER_ASSETS=/usr/local/kubebuilder/bin
