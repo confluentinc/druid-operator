@@ -48,6 +48,7 @@ func getObjectHash(obj metav1.Object) (string, error) {
 	if bytes, err := json.Marshal(obj); err != nil {
 		return "", err
 	} else {
+// The use of SHA1 should be avoided for any security or cryptographic purposes to meet Federal requirements. Please verify how this is being used. https://go/fips-compliance 
 		sha1Bytes := sha1.Sum(bytes)
 		return base64.StdEncoding.EncodeToString(sha1Bytes[:]), nil
 	}
