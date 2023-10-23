@@ -85,7 +85,8 @@ fmt: ## Run go fmt against code.
 
 .PHONY: vet
 vet: ## Run go vet against code.
-	go vet ./...
+	$(if $(GO_EXPERIMENTS),GOEXPERIMENT=$(subst $(_space),$(_comma),$(GO_EXPERIMENTS))) \
+	$(GO_FIPS_ENV_VARS) go vet ./...
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
