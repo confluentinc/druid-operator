@@ -11,7 +11,6 @@ blocks:
         commands:
           - sem-version go 1.20.6
           - checkout
-          - go clean -modcache
       jobs:
         - name: Build, Test
           commands:
