@@ -23,7 +23,7 @@ COPY controllers/ controllers/
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 RUN if [ "$TARGETOS" = "linux" ] && [ "$TARGETARCH" = "amd64" -o "$TARGETARCH" = "x86_64" ]; then \
 		echo "Turning on boringcrypto" && \
-		CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GOEXPERIMENT=boringcrypto go build -a -o manager main.go; \
+		CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=amd64 GOEXPERIMENT=boringcrypto go build -a -o manager main.go; \
 	else \
 		CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go; \
 	fi
