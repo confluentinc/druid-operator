@@ -46,8 +46,6 @@ spec:
               nodeGrabberImage:
                 type: string
               replicas:
-                description: Foo is an example field of LocalStorage. Edit localstorage_types.go
-                  to remove/update
                 type: integer
               serviceAccountName:
                 type: string
