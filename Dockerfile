@@ -31,7 +31,7 @@ RUN if [ "$TARGETOS" = "linux" ] && [ "$TARGETARCH" = "amd64" -o "$TARGETARCH" =
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM 519856050701.dkr.ecr.us-west-2.amazonaws.com/docker/prod/confluentinc/lobo-dynamic:v0.12.0
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
