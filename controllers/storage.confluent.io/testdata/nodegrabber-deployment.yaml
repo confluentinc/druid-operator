@@ -28,7 +28,7 @@ spec:
         - tail
         - -f
         - /dev/null
-        image: 755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-base-alpine:v2.7.0
+        image: 519856050701.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-base-alpine:v2.7.0
         imagePullPolicy: Always
         name: node-grabber
         ports:

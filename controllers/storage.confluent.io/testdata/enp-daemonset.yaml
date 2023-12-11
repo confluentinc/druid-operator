@@ -23,7 +23,7 @@ spec:
         operator-version: storage.confluent.io-v1
     spec:
       containers:
-      - image: 755363985185.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0
+      - image: 519856050701.dkr.ecr.us-west-2.amazonaws.com/docker/dev/confluentinc/cc-eks-nvme-ssd-provisioner:v0.19.0
         imagePullPolicy: Always
         name: eks-nvme-provisioner
         resources: {}
