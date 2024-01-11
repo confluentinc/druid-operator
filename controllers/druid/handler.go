@@ -1598,7 +1598,7 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 
 	for key, nodeSpec := range m.Spec.Nodes {
 		nodeSpecs := nodeSpecsByNodeType[nodeSpec.NodeType]
-		nodeSpecsByNodeType[nodeSpec.NodeType] = append(nodeSpecs, keyAndNodeSpec{key, nodeSpec})
+		nodeSpecsByNodeType[nodeSpec.NodeType] = append(nodeSpecs, keyAndNodeSpec{key, *nodeSpec})
 	}
 
 	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
