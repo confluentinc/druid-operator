@@ -70,6 +70,9 @@ func scaleStatefulSet(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.D
 }
 
 func deployHistorical(sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, emitEvent EventEmitter, batchSize int32, baseUrl string) error {
+	if batchSize <= 0 {
+		return fmt.Errorf("Invalid BatchSize supplied: %s", batchSize)
+	}
 	// patch the updateStrategy with onDelete
 	err := patchUpdateStrategy(sdk, m, nodeSpec, onDelete, emitEvent)
 	if err != nil {
