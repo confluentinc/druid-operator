@@ -214,7 +214,7 @@ type DruidSpec struct {
 	// that is, it must match regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
 
 	// +required
-	Nodes map[string]DruidNodeSpec `json:"nodes"`
+	Nodes map[string]*DruidNodeSpec `json:"nodes"`
 
 	// Operator deploys the sidecar container based on these properties. Sidecar will be deployed for all the Druid pods.
 	// +optional
@@ -246,7 +246,11 @@ type DruidNodeSpec struct {
 	// Druid node type
 	// +required
 	// +kubebuilder:validation:Enum:=historical;overlord;middleManager;indexer;broker;coordinator;router
+
 	NodeType string `json:"nodeType"`
+
+	// set only for the historical nodetype
+	DeploymentConfig *DeploymentConfig `json:"deploymentConfig,omitempty"`
 
 	// Port used by Druid Process
 	// +required
@@ -413,6 +417,11 @@ type DeepStorageSpec struct {
 	Spec json.RawMessage `json:"spec"`
 }
 
+type DeploymentConfig struct {
+	Mode      string `json:"mode"`
+	BatchSize int32  `json:"batchSize,omitempty"`
+}
+
 // These are valid conditions of a druid Node
 const (
 	// DruidClusterReady indicates the underlying druid objects is fully deployed
@@ -433,6 +442,12 @@ type DruidNodeTypeStatus struct {
 	Reason                   string                 `json:"reason,omitempty"`
 }
 
+type HistoricalStatus struct {
+	Replica            int32    `json:"replica"`
+	CurrentBatch       int32    `json:"currentBatch"`
+	DecommissionedPods []string `json:"decommissionedPods"`
+}
+
 // DruidStatus defines the observed state of Druid
 type DruidClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -447,6 +462,7 @@ type DruidClusterStatus struct {
 	HPAutoScalers          []string            `json:"hpAutoscalers,omitempty"`
 	Pods                   []string            `json:"pods,omitempty"`
 	PersistentVolumeClaims []string            `json:"persistentVolumeClaims,omitempty"`
+	Historical             HistoricalStatus    `json:"historicalStatus,omitempty"`
 }
 
 // +kubebuilder:object:root=true

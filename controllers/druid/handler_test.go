@@ -20,7 +20,7 @@ func TestMakeStatefulSetForBroker(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+	actual, _ := makeStatefulSet(nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(appsv1.StatefulSet)
@@ -35,7 +35,7 @@ func TestMakeStatefulSetForBrokerWithSidecar(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+	actual, _ := makeStatefulSet(nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(appsv1.StatefulSet)
@@ -49,7 +49,7 @@ func TestDeploymentForBroker(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeDeployment(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+	actual, _ := makeDeployment(nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(appsv1.Deployment)
@@ -64,7 +64,7 @@ func TestMakePodDisruptionBudgetForBroker(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makePodDisruptionBudget(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+	actual, _ := makePodDisruptionBudget(nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(policyv1.PodDisruptionBudget)
@@ -79,7 +79,7 @@ func TestMakeHeadlessService(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeService(&nodeSpec.Services[0], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+	actual, _ := makeService(&nodeSpec.Services[0], nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(corev1.Service)
@@ -94,7 +94,7 @@ func TestMakeLoadBalancerService(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeService(&nodeSpec.Services[1], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+	actual, _ := makeService(&nodeSpec.Services[1], nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(corev1.Service)
@@ -121,7 +121,7 @@ func TestMakeBrokerConfigMap(t *testing.T) {
 	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
 	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeConfigMapForNodeSpec(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+	actual, _ := makeConfigMapForNodeSpec(nodeSpec, clusterSpec, makeLabelsForNodeSpec(nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
 	addHashToObject(actual)
 
 	expected := new(corev1.ConfigMap)
