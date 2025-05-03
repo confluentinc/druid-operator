@@ -1,6 +1,6 @@
 module github.com/datainfrahq/druid-operator
 
-go 1.20
+go 1.23.8
 
 require (
 	github.com/ghodss/yaml v1.0.0
