@@ -1330,6 +1330,15 @@ spec:
                               type: string
                           type: object
                       type: object
+                    deploymentConfig:
+                      properties:
+                        batchSize:
+                          format: int32
+                          type: integer
+                        mode:
+                          type: string
+                          default: RollingUpdate
+                      type: object
                     druid.port:
                       format: int32
                       type: integer
@@ -5078,6 +5087,23 @@ spec:
             type: object
           status:
             properties:
+              historicalStatus:
+                properties:
+                  currentBatch:
+                    format: int32
+                    type: integer
+                  decommissionedPods:
+                    items:
+                      type: string
+                    type: array
+                  replica:
+                    format: int32
+                    type: integer
+                required:
+                - currentBatch
+                - decommissionedPods
+                - replica
+                type: object
               configMaps:
                 items:
                   type: string
