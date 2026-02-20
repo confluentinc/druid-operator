@@ -1,6 +1,6 @@
 name: druid-operator
 lang: go
-lang_version: 1.20.6
+lang_version: "1.25.7"
 git:
   enable: true
 github:
@@ -10,8 +10,13 @@ semaphore:
   enable: true
   pipeline_enable: false
   triggers:
-  - branches
-  - pull_requests
+    - branches
+    - pull_requests
   branches:
-  - master
-  - cc-druid-operator
+    - master
+    - cc-druid-operator
+  managed_sections:
+    - version
+    - name
+    - agent
+    - global_job_config
