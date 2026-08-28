@@ -2913,6 +2913,16 @@ spec:
                               type: string
                           type: object
                       type: object
+                    deploymentConfig:
+                      description: set only for the historical nodetype
+                      properties:
+                        batchSize:
+                          format: int32
+                          type: integer
+                        mode:
+                          type: string
+                          default: RollingUpdate
+                      type: object
                     druid.port:
                       description: Port used by Druid Process
                       format: int32
@@ -4448,7 +4458,6 @@ spec:
                       description: Node selector to be used by Druid statefulsets
                       type: object
                     nodeType:
-                      description: Druid node type
                       enum:
                       - historical
                       - overlord
@@ -11496,6 +11505,23 @@ spec:
           status:
             description: DruidStatus defines the observed state of Druid
             properties:
+              HistoricalStatus:
+                properties:
+                  currentBatch:
+                    format: int32
+                    type: integer
+                  decommissionedPods:
+                    items:
+                      type: string
+                    type: array
+                  replica:
+                    format: int32
+                    type: integer
+                required:
+                - currentBatch
+                - decommissionedPods
+                - replica
+                type: object
               configMaps:
                 items:
                   type: string
