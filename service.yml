@@ -1,17 +1,14 @@
 name: druid-operator
 lang: go
-lang_version: "1.26.7"
+lang_version: "1.26.8"
 git:
   enable: true
-github:
-  enable: true
-  repo_name: confluentinc/druid-operator
 semaphore:
   enable: true
   pipeline_enable: false
   triggers:
-  - branches
-  - pull_requests
+    - branches
+    - pull_requests
   branches:
-  - master
-  - cc-druid-operator
+    - master
+    - cc-druid-operator
