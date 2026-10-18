@@ -1,6 +1,6 @@
 name: druid-operator
 lang: go
-lang_version: 1.26.7
+lang_version: "1.26.9"
 git:
   enable: true
 semaphore:
